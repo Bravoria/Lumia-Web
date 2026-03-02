@@ -1,0 +1,26 @@
+/* src/app.css */
+:root {
+  /* Variáveis de cor do Bravor OS 2.0 para usares no futuro se quiseres */
+  --bg-os: #0F0F11;
+  --card-os: #16161A;
+  --text-main: #ffffff;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-os);
+  color: var(--text-main);
+  
+  /* A MÁGICA DA FONTE ACONTECE AQUI */
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* Deixa a fonte super nítida (Padrão Apple/Silicon Valley) */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Garante que os inputs e botões herdam a fonte Inter e não a do navegador */
+input, button, textarea, select {
+  font-family: inherit;
+}
