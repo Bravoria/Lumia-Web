@@ -29,6 +29,8 @@
       <img src="/logo.png" alt="LumiaOS" class="main-logo" />
     </div>
 
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
     <nav class="nav-stack" on:click={() => mobileMenuOpen = false}>
       <div class="nav-group">
         <p class="nav-label">Comando</p>
@@ -84,6 +86,8 @@
 
 <!-- Overlay mobile -->
 {#if mobileMenuOpen}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="mobile-overlay" on:click={() => mobileMenuOpen = false}></div>
 {/if}
 

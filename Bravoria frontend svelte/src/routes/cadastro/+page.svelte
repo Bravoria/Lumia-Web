@@ -134,6 +134,8 @@
     justify-content: center;
     margin-bottom: 1.25rem;
     height: 56px;
+  }
+
   .logo-img {
     height: auto;
     width: 160px;
