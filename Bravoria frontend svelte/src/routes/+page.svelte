@@ -142,7 +142,7 @@
 
       <div class="nav-actions">
         <a href="/login" class="link-login">Entrar</a>
-        <button class="btn-nav" on:click={() => goto('/cadastro')}>Começar grátis</button>
+        <a href="/cadastro" class="btn-nav" style="text-decoration:none">Começar grátis</a>
       </div>
     </div>
   </header>
@@ -172,10 +172,10 @@
       </p>
 
       <div class="hero-cta">
-        <button class="btn-primary-lg" on:click={() => goto('/cadastro')}>
+        <a href="/cadastro" class="btn-primary-lg" style="text-decoration:none; display:inline-block;">
           Testar 7 dias grátis
           <span class="btn-arrow">→</span>
-        </button>
+        </a>
         <span class="hero-note">Sem cartão de crédito • Setup em 5 min</span>
       </div>
 
@@ -369,9 +369,9 @@
             {/if}
           </div>
 
-          <button class="plan-cta" class:plan-cta-featured={plan.highlight} on:click={() => goto('/cadastro')}>
+          <a href="/cadastro" class="plan-cta" class:plan-cta-featured={plan.highlight} style="text-decoration:none; display:block; text-align:center;">
             {plan.cta}
-          </button>
+          </a>
 
           <div class="plan-features">
             {#each plan.features as f}
@@ -414,10 +414,10 @@
     <div class="cta-content">
       <h2>Sua clínica merece operar<br/>no <span class="gold">piloto automático.</span></h2>
       <p>Comece grátis. Sem cartão. Sem compromisso.</p>
-      <button class="btn-primary-lg" on:click={() => goto('/cadastro')}>
+      <a href="/cadastro" class="btn-primary-lg" style="text-decoration:none; display:inline-block;">
         Criar conta agora
         <span class="btn-arrow">→</span>
-      </button>
+      </a>
     </div>
   </section>
 
