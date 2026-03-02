@@ -592,7 +592,7 @@ Responda no máximo em 3 parágrafos"
   </div>
 {/if}
 
-<UpgradeModal bind:show={showUpgrade} feature="max_faq" currentPlan={planInfo?.planName ?? 'Starter'} requiredPlan="Pro" />
+<UpgradeModal clinicId={clinicId} bind:show={showUpgrade} feature="max_faq" currentPlan={planInfo?.planName ?? 'Starter'} requiredPlan="Pro" />
 
 <style>
   .wrap { max-width: 1100px; margin: 0 auto; padding-bottom: 2rem; }

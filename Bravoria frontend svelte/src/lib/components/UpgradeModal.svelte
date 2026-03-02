@@ -5,6 +5,9 @@
   export let feature = '';
   export let currentPlan = 'Starter';
   export let requiredPlan = 'Pro';
+  export let clinicId = null;
+  export let userEmail = null;
+  let loadingUpgrade = false;
 
   // Descrições das features
   const featureLabels = {
@@ -42,6 +45,31 @@
   $: price = planPrices[targetPlan] ?? planPrices.pro;
   $: features = planFeatures[targetPlan] ?? planFeatures.pro;
   $: featureLabel = featureLabels[feature] ?? feature;
+
+  async function handleUpgrade() {
+    if (!clinicId) {
+      alert("Erro: Clínica não identificada para upgrade.");
+      return;
+    }
+    loadingUpgrade = true;
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: targetPlan, clinicId, userEmail })
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Erro ao gerar link de pagamento: " + (data.error || 'Desconhecido'));
+      }
+    } catch (e) {
+      alert("Erro de conexão com o painel de pagamento.");
+    } finally {
+      loadingUpgrade = false;
+    }
+  }
 </script>
 
 {#if show}
@@ -74,8 +102,8 @@
       </div>
 
       <div class="modal-actions">
-        <button class="btn-upgrade" on:click={() => { /* TODO: integrar com Stripe */ }}>
-          Fazer Upgrade para {requiredPlan} 🚀
+        <button class="btn-upgrade" disabled={loadingUpgrade} on:click={handleUpgrade}>
+          {loadingUpgrade ? 'Gerando link seguro...' : `Fazer Upgrade para ${requiredPlan} 🚀`}
         </button>
         <button class="btn-later" on:click={() => show = false}>Agora não</button>
       </div>

@@ -54,7 +54,7 @@
       <p class="locked-desc">Automatize atendimento, agendamento e triagem 24h direto no WhatsApp da sua clínica.</p>
       <button class="btn-unlock" on:click={() => showUpgrade = true}>Ver plano Business →</button>
     </div>
-    <UpgradeModal bind:show={showUpgrade} feature="whatsapp_ai" currentPlan={planInfo?.planName ?? 'Starter'} requiredPlan="Business" />
+    <UpgradeModal clinicId={clinicId} bind:show={showUpgrade} feature="whatsapp_ai" currentPlan={planInfo?.planName ?? 'Starter'} requiredPlan="Business" />
   {:else}
 
   <div class="grid">

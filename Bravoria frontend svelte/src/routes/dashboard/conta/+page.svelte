@@ -2,10 +2,15 @@
   import { supabase } from '$lib/supabase.js';
   import { onMount } from 'svelte';
   import { getClinicPlan } from '$lib/planGuard.js';
+  import UpgradeModal from '$lib/components/UpgradeModal.svelte';
 
   let email = '';
+  let clinicId = null;
   let fullName = '';
   let planName = 'Carregando...';
+  let planKey = 'starter';
+  let showUpgrade = false;
+  let upgradeTarget = 'Pro';
   let newPassword = '';
   
   // Estados para salvar o nome
@@ -27,12 +32,19 @@
     const { data: member } = await supabase.from('clinic_members')
       .select('clinic_id').eq('user_id', user.id).limit(1).maybeSingle();
     if (member?.clinic_id) {
-      const info = await getClinicPlan(member.clinic_id);
+      clinicId = member.clinic_id;
+      const info = await getClinicPlan(clinicId);
       planName = info?.planName || 'Starter (Gratuito)';
+      planKey = info?.planId || 'starter';
     } else {
       planName = 'Sem clínica';
     }
   });
+
+  function handleUpgrade(target) {
+    upgradeTarget = target;
+    showUpgrade = true;
+  }
 
   async function saveName() {
     if (!fullName || fullName.trim() === '') {
@@ -96,7 +108,18 @@
     </div>
 
     <div class="row"><span class="k">E-mail</span><span class="v">{email}</span></div>
-    <div class="row last"><span class="k">Plano</span><span class="v accent">{planName}</span></div>
+    <div class="row last">
+      <span class="k">Plano</span>
+      <span class="v accent" style="display:flex; align-items:center; gap: 1rem;">
+        {planName}
+        {#if planKey === 'starter' || planKey === 'free'}
+          <button class="btn-sm" on:click={() => handleUpgrade('Pro')}>🚀 Upgrade Pro</button>
+          <button class="btn-sm" on:click={() => handleUpgrade('Business')}>💎 Upgrade Business</button>
+        {:else if planKey === 'pro'}
+          <button class="btn-sm" on:click={() => handleUpgrade('Business')}>💎 Upgrade Business</button>
+        {/if}
+      </span>
+    </div>
     
     {#if msgName}
       <p class="msg" class:err={isErrorName}>{msgName}</p>
@@ -120,6 +143,9 @@
     </button>
   </div>
 </div>
+
+<UpgradeModal bind:show={showUpgrade} clinicId={clinicId} feature="Mudar de Plano" currentPlan={planName} requiredPlan={upgradeTarget} />
+
 
 <style>
   .wrap { padding-bottom: 2rem; }
@@ -155,4 +181,10 @@
   
   .msg { font-size:.85rem; color:#E5C100; margin:0 0 .75rem; }
   .msg.err { color:#ff6b6b; }
+  .btn-sm {
+    background: #1e1e1e; color: #fff; border: 1px solid #333;
+    padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.75rem;
+    font-weight: 700; cursor: pointer; transition: 0.2s;
+  }
+  .btn-sm:hover { background: #2a2a2a; border-color: #E5C100; color: #E5C100; }
 </style>

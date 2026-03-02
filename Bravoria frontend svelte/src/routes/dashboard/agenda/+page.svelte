@@ -162,7 +162,7 @@
     </div>
   {/if}
 
-  <UpgradeModal bind:show={showUpgrade} feature="max_appointments_month" currentPlan={planInfo?.planName ?? 'Starter'} requiredPlan="Pro" />
+  <UpgradeModal clinicId={clinicId} bind:show={showUpgrade} feature="max_appointments_month" currentPlan={planInfo?.planName ?? 'Starter'} requiredPlan="Pro" />
 
   {#if loading}
     <p class="muted">Carregando agenda...</p>

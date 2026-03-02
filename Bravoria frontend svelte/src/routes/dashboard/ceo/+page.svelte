@@ -114,7 +114,7 @@
       <p class="locked-desc">Receba diagnósticos inteligentes em tempo real baseados nos dados da sua clínica.</p>
       <button class="btn-unlock" on:click={() => showUpgrade = true}>Ver plano Pro →</button>
     </div>
-    <UpgradeModal bind:show={showUpgrade} feature="ceo_virtual" currentPlan={planInfo.planName} requiredPlan="Pro" />
+    <UpgradeModal clinicId={clinicId} bind:show={showUpgrade} feature="ceo_virtual" currentPlan={planInfo.planName} requiredPlan="Pro" />
   {:else}
     <div class="insights">
       {#each insights as ins, index}

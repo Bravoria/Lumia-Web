@@ -286,7 +286,7 @@
   {/if}
 </div>
 
-<UpgradeModal bind:show={showUpgrade} feature="content_ai" currentPlan={planInfo?.planName ?? 'Starter'} requiredPlan="Pro" />
+<UpgradeModal clinicId={clinicId} bind:show={showUpgrade} feature="content_ai" currentPlan={planInfo?.planName ?? 'Starter'} requiredPlan="Pro" />
 
 <style>
   .wrap { max-width: 1200px; margin: 0 auto; padding-bottom: 2rem; }
