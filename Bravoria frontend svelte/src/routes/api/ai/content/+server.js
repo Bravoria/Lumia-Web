@@ -1,12 +1,12 @@
 import { json } from '@sveltejs/kit';
-import { openai } from '$lib/openai.js';
+import { getOpenAI } from '$lib/openai.js';
 import { createClient } from '@supabase/supabase-js';
-import { VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 function getSupabase() {
     return createClient(
-        import.meta.env.VITE_SUPABASE_URL || VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY || VITE_SUPABASE_ANON_KEY
+        env.VITE_SUPABASE_URL,
+        env.VITE_SUPABASE_ANON_KEY
     );
 }
 
@@ -19,8 +19,8 @@ export async function POST({ request }) {
         }
 
         const supabase = getSupabase();
+        const openai = getOpenAI();
 
-        // Fetch clinic settings and training data for personalization
         const [settingsRes, trainingRes] = await Promise.all([
             supabase.from('clinic_settings').select('specialty, tone, services, clinic_name').eq('user_id', userId).maybeSingle(),
             supabase.from('clinic_training').select('question, answer').eq('clinic_id', clinicId).limit(10)

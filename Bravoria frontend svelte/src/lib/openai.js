@@ -1,6 +1,8 @@
 import OpenAI from 'openai';
-import { OPENAI_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
-export const openai = new OpenAI({
-    apiKey: OPENAI_API_KEY
-});
+export function getOpenAI() {
+    return new OpenAI({
+        apiKey: env.OPENAI_API_KEY || 'sk-not-configured'
+    });
+}

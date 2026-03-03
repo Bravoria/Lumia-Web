@@ -1,13 +1,12 @@
 import { json } from '@sveltejs/kit';
-import { openai } from '$lib/openai.js';
+import { getOpenAI } from '$lib/openai.js';
 import { createClient } from '@supabase/supabase-js';
-import { VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
-// Create a server-side supabase client
 function getSupabase() {
     return createClient(
-        import.meta.env.VITE_SUPABASE_URL || VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY || VITE_SUPABASE_ANON_KEY
+        env.VITE_SUPABASE_URL,
+        env.VITE_SUPABASE_ANON_KEY
     );
 }
 
@@ -20,8 +19,8 @@ export async function POST({ request }) {
         }
 
         const supabase = getSupabase();
+        const openai = getOpenAI();
 
-        // Fetch clinic data in parallel for context
         const [patientsRes, appointmentsRes, settingsRes, trainingRes] = await Promise.all([
             supabase.from('patients').select('id, name, status, source').eq('clinic_id', clinicId).limit(50),
             supabase.from('appointments').select('id, date, time, type, status').eq('clinic_id', clinicId).order('date', { ascending: false }).limit(30),
@@ -34,14 +33,12 @@ export async function POST({ request }) {
         const settings = settingsRes.data || {};
         const training = trainingRes.data || [];
 
-        // Build context summary
         const totalPatients = patients.length;
         const activePatients = patients.filter(p => p.status === 'ativo').length;
         const leadPatients = patients.filter(p => p.status === 'lead').length;
         const totalAppointments = appointments.length;
         const upcomingAppointments = appointments.filter(a => new Date(a.date) >= new Date()).length;
 
-        // Source breakdown
         const sources = {};
         patients.forEach(p => { if (p.source) sources[p.source] = (sources[p.source] || 0) + 1; });
         const sourceBreakdown = Object.entries(sources).map(([k, v]) => `${k}: ${v}`).join(', ') || 'Nenhuma fonte registrada';

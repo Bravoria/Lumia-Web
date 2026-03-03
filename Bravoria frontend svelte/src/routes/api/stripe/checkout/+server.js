@@ -1,10 +1,11 @@
 import { json } from '@sveltejs/kit';
-import { stripe } from '$lib/stripe';
-import { supabase } from '$lib/supabase'; // Wait, server-side supabase needs service role or standard user token. For this MVP, we can just pass clinic_id in metadata.
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+import { getStripe } from '$lib/stripe';
+import { supabase } from '$lib/supabase';
+
 
 export async function POST({ request, url }) {
     try {
+        const stripe = getStripe();
         const { plan, clinicId, userEmail } = await request.json();
 
         if (!clinicId) {
