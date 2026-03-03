@@ -52,15 +52,47 @@
     } catch (e) { console.error(e); }
     finally { setTimeout(() => { loading = false; }, 400); }
   });
+
+  function exportCSV() {
+    const rows = [
+      ['Métrica', 'Valor'],
+      ['Total de Pacientes', stats.totalPatients],
+      ['Pacientes Ativos', stats.activePatients],
+      ['Leads', stats.leadPatients],
+      ['Total de Agendamentos', stats.totalAppointments],
+      ['Agendados', stats.scheduledAppointments],
+      ['Concluídos', stats.completedAppointments],
+      ['No-Show', stats.noShowAppointments],
+      ['Taxa de No-Show', stats.noShowRate + '%'],
+      ['Total de Posts', stats.totalPosts],
+      ['Posts Publicados', stats.publishedPosts],
+      ['Posts em Rascunho', stats.draftPosts],
+      ['Total FAQ', stats.totalFaq],
+      ['FAQ Publicadas', stats.publishedFaq]
+    ];
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `relatorio-lumia-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 </script>
 
 <svelte:head><title>Relatórios • Lumia</title></svelte:head>
 
 <div class="wrap">
   <div class="head">
-    <p class="label">RELATÓRIOS</p>
-    <h1>Painel de Performance</h1>
-    <p class="sub">Visão geral do uso da plataforma, conteúdo e gestão da sua clínica.</p>
+    <div>
+      <p class="label">RELATÓRIOS</p>
+      <h1>Painel de Performance</h1>
+      <p class="sub">Visão geral do uso da plataforma, conteúdo e gestão da sua clínica.</p>
+    </div>
+    {#if !loading && clinicId}
+      <button class="btn-export" on:click={exportCSV}>📥 Exportar CSV</button>
+    {/if}
   </div>
 
   {#if loading}
@@ -147,7 +179,9 @@
 
 <style>
   .wrap { max-width:1100px; margin:0 auto; padding-bottom: 2rem; }
-  .head { margin-bottom:1.5rem; }
+  .head { margin-bottom:1.5rem; display: flex; justify-content: space-between; align-items: flex-start; }
+  .btn-export { background: #16161A; border: 1px solid #333; color: #ccc; padding: 0.6rem 1.2rem; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; font-family: inherit; white-space: nowrap; }
+  .btn-export:hover { border-color: #E5C100; color: #E5C100; transform: translateY(-1px); }
   .label { color:#555; letter-spacing:3px; font-size:.72rem; text-transform:uppercase; margin:0 0 .3rem; font-weight:700; }
   h1 { color:#fff; font-size:2rem; margin:0 0 .35rem; letter-spacing:-.5px; }
   .sub { color:#777; margin:0; font-size:.9rem; }
