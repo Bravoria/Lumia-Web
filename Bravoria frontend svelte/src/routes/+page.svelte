@@ -430,10 +430,10 @@
   .hero-ambient { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 30%, rgba(255,255,255,0.02), transparent); pointer-events: none; z-index: 0; }
   .hero-vignette { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,5,5,0.3) 0%, transparent 30%, transparent 70%, rgba(5,5,5,0.9) 100%); pointer-events: none; z-index: 2; }
 
-  .hero-content { position: relative; z-index: 3; max-width: 750px; opacity: 0; transform: translateY(30px); }
-  .hero-content.mounted { animation: fadeUp 1s 0.3s ease forwards; }
+  .hero-content { position: relative; z-index: 3; max-width: 750px; }
+  .hero-content.mounted { animation: fadeUp 0.8s 0.2s ease both; }
 
-  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
   .hero-pill { display: inline-flex; align-items: center; gap: 8px; padding: 0.4rem 1rem; border: 1px solid rgba(255,255,255,0.08); color: #bbb; border-radius: 999px; font-size: 0.76rem; font-weight: 500; margin-bottom: 2rem; background: rgba(255,255,255,0.02); }
   .pill-dot { width: 5px; height: 5px; background: #fff; border-radius: 50%; animation: pulseDot 2.5s infinite; }
@@ -441,20 +441,20 @@
 
   h1 { font-size: 4.5rem; font-weight: 900; line-height: 1; letter-spacing: -3.5px; margin: 0 0 1.5rem; }
   .title-line { display: block; }
-  .line-1 { opacity: 0; animation: titleIn 1s 0.6s ease forwards; }
-  .line-2 { opacity: 0; animation: titleIn 1s 0.8s ease forwards; background: linear-gradient(180deg, #fff 30%, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .line-1 { animation: titleIn 0.8s 0.4s ease both; }
+  .line-2 { animation: titleIn 0.8s 0.6s ease both; background: linear-gradient(180deg, #fff 30%, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   @keyframes titleIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-  .hero-sub { color: #999; font-size: 1.05rem; line-height: 1.7; max-width: 520px; margin: 0 auto 2.5rem; letter-spacing: -0.2px; opacity: 0; animation: fadeUp 1s 1s ease forwards; }
+  .hero-sub { color: #999; font-size: 1.05rem; line-height: 1.7; max-width: 520px; margin: 0 auto 2.5rem; letter-spacing: -0.2px; animation: fadeUp 0.8s 0.7s ease both; }
 
-  .hero-cta { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-bottom: 3rem; opacity: 0; animation: fadeUp 1s 1.2s ease forwards; }
+  .hero-cta { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-bottom: 3rem; animation: fadeUp 0.8s 0.8s ease both; }
   .btn-primary-lg { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #000; border: none; padding: 0.85rem 1.8rem; border-radius: 10px; font-size: 0.92rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s; text-decoration: none; }
   .btn-primary-lg:hover { background: #e0e0e0; transform: translateY(-1px); }
   .btn-arrow { transition: transform 0.2s; }
   .btn-primary-lg:hover .btn-arrow { transform: translateX(3px); }
   .hero-note { color: #777; font-size: 0.75rem; font-weight: 500; }
 
-  .hero-proof { display: flex; align-items: center; gap: 12px; justify-content: center; opacity: 0; animation: fadeUp 1s 1.4s ease forwards; }
+  .hero-proof { display: flex; align-items: center; gap: 12px; justify-content: center; animation: fadeUp 0.8s 0.9s ease both; }
   .proof-avatars { display: flex; }
   .proof-av { width: 28px; height: 28px; border-radius: 50%; background: #151515; border: 2px solid #050505; color: #666; font-size: 0.5rem; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-left: -5px; }
   .proof-av:first-child { margin-left: 0; }
@@ -464,10 +464,10 @@
   /* ===== MOCKUP 3D ===== */
   .hero-mockup {
     position: relative; z-index: 3; max-width: 850px; width: 100%; margin: 2rem auto 0;
-    opacity: 0; transition: transform 0.05s linear;
+    transition: transform 0.05s linear;
     will-change: transform;
   }
-  .hero-mockup.mounted { animation: mockupIn 1.5s 1s ease forwards; }
+  .hero-mockup.mounted { animation: mockupIn 1s 0.5s ease both; }
   @keyframes mockupIn { from { opacity: 0; } to { opacity: 1; } }
 
   .mockup-window { background: #111; border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; overflow: hidden; box-shadow: 0 60px 120px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03); }
