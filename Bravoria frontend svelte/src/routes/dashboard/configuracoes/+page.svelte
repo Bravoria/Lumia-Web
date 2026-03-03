@@ -256,28 +256,30 @@
   .small{ font-size:.85rem; margin-top:.5rem; }
 
   .top{ display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1.25rem; }
-  .btn{
-    padding:.75rem 1.1rem; border-radius:10px;
-    border:1px solid #2a2a2a; background:#141414; color:#fff;
-    font-weight:800; cursor:pointer;
+  .btn-save{
+    padding:.8rem 1.5rem; border-radius:12px;
+    border:none; background:#E5C100; color:#000;
+    font-weight:800; cursor:pointer; font-size: .9rem;
+    transition: all 0.2s;
   }
-  .btn:hover{ border-color:#E5C100; }
-  .btn:disabled{ opacity:.6; cursor:not-allowed; }
+  .btn-save:hover{ background:#fce141; transform: translateY(-1px); }
+  .btn-save:disabled{ opacity:.5; cursor:not-allowed; transform: none; }
 
-  .alert{ border-radius:12px; padding:.85rem 1rem; margin-bottom:1rem; border:1px solid #2a2a2a; }
+  .alert{ border-radius:12px; padding:.85rem 1rem; margin-bottom:1rem; border:1px solid #2a2a2a; font-size: .9rem; font-weight: 600; }
   .error{ background: rgba(220,38,38,.08); color:#ff6b6b; border-color: rgba(220,38,38,.25); }
   .ok{ background: rgba(229,193,0,.07); color:#E5C100; border-color: rgba(229,193,0,.25); }
 
   .grid{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem; }
   .card{
-    background:#141414; border:1px solid #252525; border-radius:14px;
-    padding:1.25rem;
+    background:#141414; border:1px solid #252525; border-radius:16px;
+    padding:1.5rem; transition: border-color 0.2s;
   }
+  .card:hover { border-color: #333; }
   .big{ margin-top:1rem; }
 
-  h2{ color:#fff; font-size:1.05rem; margin:0 0 1rem; font-weight:900; letter-spacing:-.3px; }
+  h2{ color:#fff; font-size:1.05rem; margin:0 0 1.25rem; font-weight:900; letter-spacing:-.3px; }
 
-  .field{ margin-bottom:1rem; }
+  .field{ margin-bottom:1.15rem; }
   label{ display:block; color:#888; font-size:.72rem; text-transform:uppercase; letter-spacing:.8px; margin-bottom:.45rem; font-weight:700; }
   input, select, textarea{
     width:100%;
@@ -288,19 +290,22 @@
     color:#fff;
     font-size:.95rem;
     outline:none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
   }
-  textarea{ resize: vertical; }
+  textarea{ resize: vertical; font-family: 'Inter', sans-serif; }
   input:focus, select:focus, textarea:focus{ border-color:#E5C100; }
 
   .days{ display:flex; flex-wrap:wrap; gap:.75rem; margin-bottom:1rem; }
-  .day{ display:flex; align-items:center; gap:.4rem; color:#ccc; font-size:.9rem; }
+  .day{ display:flex; align-items:center; gap:.4rem; color:#ccc; font-size:.9rem; cursor: pointer; }
   .day span{ color:#bbb; font-size:.9rem; }
+  .day input[type="checkbox"] { accent-color: #E5C100; }
   .row{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
 
   @media (max-width:900px){
     .wrap{ padding:1.5rem; }
     .grid{ grid-template-columns:1fr; }
     .top{ flex-direction:column; }
-    .btn{ width:100%; }
+    .btn-save{ width:100%; }
   }
 </style>
