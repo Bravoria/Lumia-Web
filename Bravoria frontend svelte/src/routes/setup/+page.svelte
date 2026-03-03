@@ -67,6 +67,18 @@
     step = 1;
   }
 
+  function generateSlug(name) {
+    return name
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
+      .replace(/[^a-z0-9\s-]/g, '') // remove caracteres especiais
+      .trim()
+      .replace(/\s+/g, '-') // espaços viram hífens
+      .replace(/-+/g, '-') // hífens duplicados
+      .slice(0, 50) // limita tamanho
+      + '-' + Math.random().toString(36).slice(2, 6); // sufixo único
+  }
+
   async function createClinic() {
     errorMsg = '';
     if (!specialty.trim() || !city.trim()) {
@@ -77,10 +89,14 @@
     isSaving = true;
 
     try {
+      const finalName = clinicName.trim() || `Clínica de ${specialty.trim()}`;
+      const slug = generateSlug(finalName);
+
       const { data: clinic, error: clinicErr } = await supabase
         .from('clinics')
         .insert({
-          name: clinicName.trim() || `Clínica de ${specialty.trim()}`,
+          name: finalName,
+          slug: slug,
           whatsapp: whatsapp.trim() || null,
           timezone: 'America/Sao_Paulo'
         })

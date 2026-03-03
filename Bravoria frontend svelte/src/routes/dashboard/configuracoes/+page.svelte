@@ -15,6 +15,8 @@
   let city = '';
   let whatsapp = '';
   let tone = 'Profissional';
+  let clinicSlug = '';
+  let myClinicId = null;
 
   // Horários / dias (lado direito)
   const dayKeys = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
@@ -97,6 +99,24 @@
     isLoading = false;
   }
 
+  // Carregar slug da tabela clinics
+  async function loadSlug(session) {
+    const { data: member } = await supabase
+      .from('clinic_members')
+      .select('clinic_id')
+      .eq('user_id', session.user.id)
+      .limit(1).maybeSingle();
+    if (member?.clinic_id) {
+      myClinicId = member.clinic_id;
+      const { data: clinic } = await supabase
+        .from('clinics')
+        .select('slug')
+        .eq('id', myClinicId)
+        .maybeSingle();
+      clinicSlug = clinic?.slug || '';
+    }
+  }
+
   async function saveSettings() {
     errorMsg = '';
     savedOk = '';
@@ -135,13 +155,21 @@
       errorMsg = 'Erro ao salvar: ' + error.message;
     } else {
       savedOk = 'Configurações salvas com sucesso ✅';
+      // Salvar slug na tabela clinics
+      if (myClinicId && clinicSlug.trim()) {
+        await supabase.from('clinics').update({ slug: clinicSlug.trim() }).eq('id', myClinicId);
+      }
       setTimeout(() => (savedOk = ''), 2500);
     }
 
     isSaving = false;
   }
 
-  onMount(loadSettings);
+  onMount(async () => {
+    await loadSettings();
+    const session = await requireSession();
+    if (session) await loadSlug(session);
+  });
 </script>
 
 {#if isLoading}
@@ -191,6 +219,17 @@
         <div class="field">
           <label>WhatsApp (opcional)</label>
           <input placeholder="Ex: 11 99999-9999" bind:value={whatsapp} />
+        </div>
+
+        <div class="field">
+          <label>Link de Agendamento Online</label>
+          <div class="slug-row">
+            <span class="slug-prefix">lumia-web.vercel.app/agendar/</span>
+            <input placeholder="minha-clinica" bind:value={clinicSlug} class="slug-input" />
+          </div>
+          {#if clinicSlug}
+            <p class="slug-preview">📎 Compartilhe: <a href="https://lumia-web.vercel.app/agendar/{clinicSlug}" target="_blank">lumia-web.vercel.app/agendar/{clinicSlug}</a></p>
+          {/if}
         </div>
 
         <div class="field">
@@ -300,6 +339,12 @@
   .day{ display:flex; align-items:center; gap:.4rem; color:#ccc; font-size:.9rem; cursor: pointer; }
   .day span{ color:#bbb; font-size:.9rem; }
   .day input[type="checkbox"] { accent-color: #E5C100; }
+  .slug-row { display: flex; align-items: center; background: #0A0A0A; border: 1px solid #2a2a2a; border-radius: 10px; overflow: hidden; }
+  .slug-prefix { color: #555; font-size: 0.75rem; padding: 0 0 0 0.75rem; white-space: nowrap; font-weight: 600; }
+  .slug-input { border: none !important; border-radius: 0 !important; padding-left: 0.4rem !important; font-size: 0.85rem !important; }
+  .slug-preview { color: #888; font-size: 0.75rem; margin-top: 0.4rem; }
+  .slug-preview a { color: #E5C100; text-decoration: none; }
+  .slug-preview a:hover { text-decoration: underline; }
   .row{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
 
   @media (max-width:900px){
