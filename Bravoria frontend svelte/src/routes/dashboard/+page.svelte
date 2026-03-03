@@ -162,7 +162,7 @@
 <svelte:head><title>Dashboard • LumiaOS</title></svelte:head>
 
 {#if loading}
-  <div class="os-v2-container" in:fade={{ duration: 200 }} out:fade={{ duration: 200 }}>
+  <div class="os-v2-container" in:fade={{ duration: 200 }}>
     <!-- Skeleton Top Cards -->
     <div class="grid-4">
       {#each Array(4) as _, i}
