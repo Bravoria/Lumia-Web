@@ -167,32 +167,8 @@
           <div class="bar-dots"><span></span><span></span><span></span></div>
           <span class="bar-url">lumia-web.vercel.app/dashboard</span>
         </div>
-        <div class="mockup-screen">
-          <div class="mock-sidebar">
-            <div class="ms-brand"><img src="/logo-icon.png" alt="Lumia" class="ms-logo-img" /></div>
-            <div class="ms-nav">
-              <div class="ms-item active"></div>
-              <div class="ms-item"></div>
-              <div class="ms-item"></div>
-              <div class="ms-item"></div>
-            </div>
-          </div>
-          <div class="mock-main">
-            <div class="mock-topbar"></div>
-            <div class="mock-grid">
-              <div class="mock-card"><div class="mc-label"></div><div class="mc-val"></div></div>
-              <div class="mock-card"><div class="mc-label"></div><div class="mc-val"></div></div>
-              <div class="mock-card mc-white"><div class="mc-label dark"></div><div class="mc-val dark"></div></div>
-              <div class="mock-card"><div class="mc-label"></div><div class="mc-val"></div></div>
-            </div>
-            <div class="mock-chart">
-              <svg viewBox="0 0 600 80">
-                <path d="M0,60 Q80,40 160,55 T320,20 T480,35 T600,5" fill="none" stroke="#fff" stroke-width="2" opacity="0.12"/>
-                <path d="M0,60 Q80,40 160,55 T320,20 T480,35 T600,5 V80 H0 Z" fill="url(#cg)" opacity="0.04"/>
-                <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="transparent"/></linearGradient></defs>
-              </svg>
-            </div>
-          </div>
+        <div class="mockup-screen-img">
+          <img src="/dashboard-preview.png" alt="Lumia Dashboard" class="dashboard-img" />
         </div>
       </div>
       <!-- Glow under mockup -->
@@ -294,9 +270,9 @@
         <button class:active={annual} on:click={() => annual = true}>Anual <span class="save-badge">-17%</span></button>
       </div>
     </div>
-    <div class="plans-grid" class:visible={visibleSections['pricing']}>
+    <div class="plans-grid plans-3d" class:visible={visibleSections['pricing']}>
       {#each plans as plan, i}
-        <div class="plan-card" class:featured={plan.highlight} style="animation-delay: {i * 100}ms">
+        <div class="plan-card plan-3d-{i}" class:featured={plan.highlight} style="animation-delay: {i * 100}ms">
           {#if plan.badge}<div class="plan-badge">{plan.badge}</div>{/if}
           <div class="plan-header">
             <h3>{plan.name}</h3>
@@ -500,17 +476,8 @@
   .bar-dots { display: flex; gap: 5px; }
   .bar-dots span { width: 8px; height: 8px; border-radius: 50%; background: #1a1a1a; }
   .bar-url { color: #2a2a2a; font-size: 0.62rem; font-weight: 500; margin-left: auto; }
-  .mockup-screen { display: flex; height: 280px; }
-  .mock-sidebar { width: 44px; background: #0d0d0d; border-right: 1px solid rgba(255,255,255,0.04); padding: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .ms-brand { margin-bottom: 10px; } .ms-logo-img { width: 18px; height: 18px; object-fit: contain; border-radius: 3px; }
-  .ms-item { width: 22px; height: 22px; border-radius: 5px; background: #141414; } .ms-item.active { background: #1a1a1a; border: 1px solid #222; }
-  .mock-main { flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-  .mock-topbar { height: 5px; width: 100%; background: rgba(255,255,255,0.02); border-radius: 3px; }
-  .mock-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .mock-card { background: #141414; border: 1px solid #1a1a1a; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
-  .mc-label { height: 4px; width: 40%; background: #1e1e1e; border-radius: 2px; } .mc-val { height: 12px; width: 60%; background: #222; border-radius: 3px; }
-  .mc-white { background: #fff; border: none; } .mc-label.dark { background: #ccc; } .mc-val.dark { background: #aaa; }
-  .mock-chart { flex: 1; padding: 8px; } .mock-chart svg { width: 100%; height: 100%; }
+  .mockup-screen-img { width: 100%; }
+  .dashboard-img { width: 100%; height: auto; display: block; }
 
   /* ===== LOGOS BAR ===== */
   .logos-bar { padding: 2.5rem 2rem; border-top: 1px solid rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.03); text-align: center; }
@@ -563,10 +530,14 @@
   .billing-toggle button.active { background: #151515; color: #fff; }
   .save-badge { background: #fff; color: #000; font-size: 0.58rem; font-weight: 800; padding: 2px 5px; border-radius: 4px; }
 
-  .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; align-items: start; }
-  .plan-card { background: #0a0a0a; border: 1px solid #131313; border-radius: 16px; padding: 2rem; position: relative; transition: border-color 0.3s; }
+  .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; align-items: center; }
+  .plans-3d { perspective: 1200px; }
+  .plan-card { background: #0a0a0a; border: 1px solid #131313; border-radius: 16px; padding: 2rem; position: relative; transition: all 0.5s cubic-bezier(0.23, 0.86, 0.39, 0.96); }
   .plan-card:hover { border-color: #1e1e1e; }
-  .plan-card.featured { background: #0d0d0d; border-color: #2a2a2a; }
+  .plan-card.featured { background: #0d0d0d; border-color: #333; z-index: 2; transform: scale(1.04) translateY(-12px); box-shadow: 0 30px 60px rgba(0,0,0,0.4); }
+  :global(.plan-3d-0) { transform: scale(0.95) translateX(8px); transform-origin: right center; }
+  :global(.plan-3d-2) { transform: scale(0.95) translateX(-8px); transform-origin: left center; }
+  :global(.plan-3d-0:hover), :global(.plan-3d-2:hover) { transform: scale(0.97); }
   .plan-badge { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: #fff; color: #000; font-size: 0.62rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; white-space: nowrap; }
 
   .plan-header { margin-bottom: 1.5rem; }
