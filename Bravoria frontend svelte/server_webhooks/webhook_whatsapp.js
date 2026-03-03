@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '../.env' }); // Lê as variáveis da raiz Svelte (onde estão SUPABASE e OPENAI)
+dotenv.config({ path: '../.env' });
 
 const app = express();
 app.use(cors());
@@ -23,24 +23,20 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const openai = new OpenAI({ apiKey: openaiKey });
 
 // ==========================================
-// 1. ENDPOINT DE WEBHOOK PARA RECEBER MENSAGENS (Ex: Evolution API)
+// ENDPOINT DE WEBHOOK PARA RECEBER MENSAGENS
 // ==========================================
 app.post('/webhook/evolution', async (req, res) => {
     try {
         const payload = req.body;
-
-        // 1.1: Extração básica dependendo do payload da API (aqui genérico)
-        // Se for da Evolution API, costuma vir req.body.data.message
         const messageEvent = payload.data?.message || payload;
 
-        // Ignora status de leitura, etc, foca na mensagem
         if (!messageEvent || !messageEvent.text) {
             return res.status(200).send('Ignorado');
         }
 
         const patientPhone = messageEvent.remoteJid?.split('@')[0] || messageEvent.pushName || 'Desconhecido';
         const patientMessage = messageEvent.text;
-        const clinicId = req.query.clinic_id; // Passado no endpoint configurado na API (Ex: /webhook/evolution?clinic_id=XXX)
+        const clinicId = req.query.clinic_id;
 
         if (!clinicId) {
             console.warn("Mensagem recebida mas sem clinic_id no webhook URL.");
@@ -50,10 +46,10 @@ app.post('/webhook/evolution', async (req, res) => {
         console.log(`[WhatsApp -> IA] ${patientPhone}: ${patientMessage}`);
 
         // ==========================================
-        // 2. VERIFICAR/CADASTRAR LEAD NO SUPABASE
+        // 1. VERIFICAR/CADASTRAR LEAD NO SUPABASE
         // ==========================================
         let patient = null;
-        const { data: existingPatients, error: searchError } = await supabase
+        const { data: existingPatients } = await supabase
             .from('patients')
             .select('*')
             .eq('clinic_id', clinicId)
@@ -64,7 +60,6 @@ app.post('/webhook/evolution', async (req, res) => {
             patient = existingPatients[0];
         } else {
             console.log(`[CRM] Cadastrando novo lead: ${patientPhone}`);
-            // Insere Lead no Kanban Pipeline
             const { data: newPatient, error: insertErr } = await supabase
                 .from('patients')
                 .insert({
@@ -83,69 +78,131 @@ app.post('/webhook/evolution', async (req, res) => {
         }
 
         // ==========================================
-        // 3. CONSULTAR CONTEXTO E FAQ PARA A IA
+        // 2. CONSULTAR TODO O CONTEXTO DO SISTEMA
         // ==========================================
-        const [settingsRes, trainingRes] = await Promise.all([
+        const today = new Date().toISOString().slice(0, 10);
+
+        const [settingsRes, trainingRes, patientApptsRes, todayApptsRes] = await Promise.all([
             supabase.from('clinic_settings').select('*').eq('user_id', clinicId).maybeSingle(),
-            supabase.from('faq_items').select('question, answer').eq('clinic_id', clinicId).limit(30)
+            supabase.from('faq_items').select('question, answer').eq('clinic_id', clinicId).limit(30),
+            patient?.name
+                ? supabase.from('appointments').select('date, time, type, status').eq('clinic_id', clinicId).eq('patient_name', patient.name).order('date', { ascending: false }).limit(5)
+                : Promise.resolve({ data: [] }),
+            supabase.from('appointments').select('date, time').eq('clinic_id', clinicId).gte('date', today).in('status', ['agendado', 'confirmado']).order('date').limit(30)
         ]);
 
         const settings = settingsRes.data || {};
         const training = trainingRes.data || [];
+        const patientAppts = patientApptsRes.data || [];
+        const bookedSlots = todayApptsRes.data || [];
 
-        const systemPrompt = `Você é o Concierge Virtual Oficial de Atendimento da clínica "${settings.clinic_name || 'Saúde'}".
-Seu papel não é apenas de um robô, mas de um(a) recepcionista nível sênior (PhD em atendimento ao cliente), altamente capacitado(a) em vendas, empatia e conversão de agendamentos.
+        // Calcular horarios livres
+        const startH = parseInt((settings.start_time || '09:00').split(':')[0]);
+        const endH = parseInt((settings.end_time || '18:00').split(':')[0]);
+        const activeDays = Array.isArray(settings.days) ? settings.days : ['seg', 'ter', 'qua', 'qui', 'sex'];
+        const dayMap = { 0: 'dom', 1: 'seg', 2: 'ter', 3: 'qua', 4: 'qui', 5: 'sex', 6: 'sab' };
 
-INFORMAÇÕES DA CLÍNICA:
-Especialidade: ${settings.specialty || 'Área da Saúde'}
-Cidade/Local: ${settings.city || 'Não especificada'}
-Tom de Voz Exigido: ${settings.tone || 'Humanizado, acolhedor e profissional'}
-Serviços Prestados: ${Array.isArray(settings.services) ? settings.services.join(', ') : settings.services || 'Consulte a recepção.'}
-Sobre a Clínica: ${settings.about_clinic || 'Somos focados na melhor experiência e saúde dos nossos pacientes.'}
-Convênios e Pagamentos: ${settings.insurances || 'Informação não cadastrada'} / ${settings.payment_methods || 'Consulte os métodos na avaliação.'}
-Diferenciais (Por que escolher a clínica): ${settings.differentials || 'Excelência e tecnologia.'}
+        function getAvailableSlots(dateStr) {
+            const d = new Date(dateStr + 'T12:00:00');
+            const dayKey = dayMap[d.getDay()];
+            if (!activeDays.includes(dayKey)) return 'Fechado';
+            const slots = [];
+            for (let h = startH; h < endH; h++) {
+                for (const m of ['00', '30']) {
+                    const t = `${h.toString().padStart(2, '0')}:${m}`;
+                    const isBooked = bookedSlots.some(b => b.date === dateStr && b.time?.slice(0, 5) === t);
+                    if (!isBooked) slots.push(t);
+                }
+            }
+            return slots.length > 0 ? slots.slice(0, 6).join(', ') + (slots.length > 6 ? ` (+${slots.length - 6} mais)` : '') : 'Lotado';
+        }
 
-REGRAS ESTÓICAS DO ATENDIMENTO (GUARDRAILS CLÍNICOS E COMERCIAIS):
-1. [PROIBIÇÃO ABSOLUTA DE DIAGNÓSTICO]: Você é um assistente, NÃO É MÉDICO OU DENTISTA. Jamais afirme que o paciente tem uma doença ou sugira medicamentos. Sempre oriente: "Para entender seu caso corretamente, o ideal é avaliarmos em consulta."
-2. [CONVERSÃO E AGENDAMENTO]: O seu **objetivo final** na conversa é sempre guiar o paciente educadamente para o AGENDAMENTO. Termine suas respostas (quando fizer sentido) com uma pergunta que incentiva o avanço. Ex: "Podemos encontrar um horário para sua avaliação esta semana?" ou "Gostaria de agendar para avaliarmos isso de pertinho?"
-3. [POLÍTICA DE PREÇOS]: Na área da saúde (CFM/CFO), não se costuma passar orçamentos completos sem avaliação clínica. Se o paciente perguntar o preço de um procedimento (ex: Implante, Faceta, Cirurgia), explique com extrema educação que "Cada paciente é único e os materiais variam", sugerindo imediatamente o agendamento de uma avaliação ou consulta inicial. Se na aba Base de Dados constar preços de consultas, você pode informá-las.
-4. [EMPATIA RADICAL]: Demonstre preocupação legítima. Se o paciente disser que está com dor, demonstre urgência e priorize o encontro presencial. Ex: "Poxa, sinto muito que esteja com dor! Vamos tentar um encaixe para te ajudar o mais rápido possível."
-5. [TOM E LINGUAGEM]: Natural, curto, sem usar blocos de textos gigantes. Comporte-se como um humano no WhatsApp. Divida os pensamentos e use *negrito* para destacar coisas importantes, e emojis (com parcimônia) para dar cor à frase.
-6. [REGRAS PESSOAIS DA CLÍNICA]: 
-${Array.isArray(settings.rules) && settings.rules.length > 0 ? settings.rules.map(r => '- ' + r).join('\n') : '- Seja solicito sempre.'}
+        const tomorrowStr = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+        const slotsToday = getAvailableSlots(today);
+        const slotsTomorrow = getAvailableSlots(tomorrowStr);
 
-BASE DE DADOS EXATA (MEMÓRIA DA CLÍNICA):
-Sempre baseie-se estritamente nestas informações fornecidas pelos diretores:
-${training.length > 0 ? training.map(t => `Q: ${t.question}\nA: ${t.answer}`).join('\n\n') : '- Sem dados adicionais. Responda com base no contexto geral.'}
-
-DICA FINAL DE OURO: Se você não sabe a resposta, seja honesto de forma Premium: "Olha, essa informação mais específica eu vou precisar confirmar com o Dr(a) ou com a gerência. Mas já posso adiantar seu agendamento para...", NUNCA INVENTE UM HORÁRIO OU VALOR.`;
+        const isReturning = patientAppts.length > 0;
+        const lastAppt = patientAppts[0];
+        const patientContext = isReturning
+            ? `PACIENTE RECORRENTE: ${patient.name} ja agendou ${patientAppts.length}x. Ultima consulta: ${lastAppt?.date} (${lastAppt?.status}). Tipo: ${lastAppt?.type}.`
+            : `LEAD NOVO: Primeiro contato de ${patient?.name || 'paciente'}. Nunca agendou antes. Priorize a conversao.`;
 
         // ==========================================
-        // 4. CHAMAR A OPENAI PARA GERAR A RESPOSTA
+        // 3. SYSTEM PROMPT - CEREBRO COMPLETO
+        // ==========================================
+        const systemPrompt = `Voce e o LUMIA - o Sistema Central de Inteligencia da clinica "${settings.clinic_name || 'Saude'}".
+Voce nao e apenas um chatbot. Voce e o CEREBRO da operacao: gerencia o CRM, a Agenda, o Pipeline de Vendas e o Atendimento.
+Nivel de expertise: PhD em Gestao de Clinicas, Vendas Consultivas e Experiencia do Paciente.
+
+INFORMACOES DA CLINICA:
+Nome: ${settings.clinic_name || 'Clinica'}
+Especialidade: ${settings.specialty || 'Area da Saude'}
+Cidade: ${settings.city || 'Nao especificada'}
+Tom de Voz: ${settings.tone || 'Humanizado, acolhedor e profissional'}
+Servicos: ${Array.isArray(settings.services) ? settings.services.join(', ') : settings.services || 'Consultas gerais'}
+Sobre: ${settings.about_clinic || 'Clinica focada na excelencia e experiencia do paciente.'}
+Convenios: ${settings.insurances || 'Consultar'}
+Diferenciais: ${settings.differentials || 'Excelencia e tecnologia.'}
+
+CONTEXTO DESTE PACIENTE (CRM):
+${patientContext}
+Status no CRM: ${patient?.status || 'Desconhecido'}
+Fonte de Captacao: ${patient?.source || 'WhatsApp'}
+
+AGENDA EM TEMPO REAL:
+Horarios disponiveis HOJE (${today}): ${slotsToday}
+Horarios disponiveis AMANHA (${tomorrowStr}): ${slotsTomorrow}
+Horario de funcionamento: ${settings.start_time || '09:00'} as ${settings.end_time || '18:00'}
+
+INSTRUCOES OPERACIONAIS (GUARDRAILS):
+
+1. [PROIBICAO ABSOLUTA DE DIAGNOSTICO] Voce NAO E MEDICO/DENTISTA. Jamais diagnostique, prescreva ou sugira medicamentos. Direcione: "Para avaliarmos seu caso com precisao, o ideal e uma consulta presencial."
+
+2. [MOTOR DE CONVERSAO] Seu objetivo #1 e AGENDAR. Para leads novos, feche o agendamento em no maximo 3 mensagens. Sempre ofereca horarios reais (use a AGENDA ACIMA). Ex: "Tenho horario hoje as 14:00 ou amanha as 10:30, qual fica melhor pra voce?"
+
+3. [PACIENTES RECORRENTES] Se e paciente que ja veio antes, seja caloroso: "Que bom ter noticias suas, {nome}! Como posso ajudar?" e sugira retorno ou check-up.
+
+4. [POLITICA DE PRECOS] Nunca passe orcamento de procedimentos complexos. Diga: "Cada caso e unico, os materiais e tecnicas variam. Vamos marcar sua avaliacao sem compromisso?" Se a FAQ tiver preco de consulta avulsa, pode informar.
+
+5. [EMPATIA RADICAL] Se o paciente mencionar DOR, URGENCIA ou MEDO: mude o tom, demonstre cuidado genuino e priorize encaixe. "Poxa, sinto muito! Vou priorizar um horario pra voce o mais rapido possivel."
+
+6. [TOM WHATSAPP] Mensagens curtas. Maximo 3-4 linhas por bloco. Use *negrito* para destaques, emojis com parcimonia. NUNCA envie textao.
+
+7. [HONESTIDADE PREMIUM] Se nao sabe: "Vou confirmar essa info com a equipe e te retorno em instantes. Enquanto isso, posso ja reservar um horario pra voce?"
+
+8. [REGRAS DA CLINICA]
+${Array.isArray(settings.rules) && settings.rules.length > 0 ? settings.rules.map(r => '- ' + r).join('\n') : '- Ser sempre solicito e cordial.'}
+
+BASE DE CONHECIMENTO (FAQ):
+${training.length > 0 ? training.map(t => `Q: ${t.question}\nA: ${t.answer}`).join('\n\n') : '(Sem perguntas cadastradas.)'}
+
+ESTRATEGIA DE OURO:
+- SE lead novo: Acolha > Responda a duvida > Ofereca horario real > Feche
+- SE paciente recorrente: Reconheca > Pergunte como esta > Sugira retorno
+- SE pergunta sobre preco: Valorize o servico > Explique individualidade > Convide pra avaliacao
+- SE dor/urgencia: Empatia maxima > Encaixe imediato > Humanize
+- SEMPRE termine com uma pergunta que avanca a conversa pro agendamento`;
+
+        // ==========================================
+        // 4. CHAMAR A OPENAI
         // ==========================================
         const completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [
                 { role: 'system', content: systemPrompt },
-                // Em um cenário real, você puxaria as últimas mensagens do Supabase para ter histórico de contexto
                 { role: 'user', content: patientMessage }
             ],
             temperature: 0.7,
-            max_tokens: 300,
+            max_tokens: 400,
         });
 
-        const aiResponse = completion.choices[0]?.message?.content || 'Desculpe, estou em manutenção agora. Um atendente já vai falar com você!';
+        const aiResponse = completion.choices[0]?.message?.content || 'Desculpe, estou em manutencao agora. Um atendente ja vai falar com voce!';
 
         console.log(`[IA -> WhatsApp] ${aiResponse}`);
 
         // ==========================================
-        // 5. DEVOLVER A MENSAGEM PARA A API DE WHATSAPP (Ex: Evolution API)
+        // 5. DEVOLVER A MENSAGEM PARA A API DE WHATSAPP
         // ==========================================
-        // Em produção, aqui você faria um POST (axios/fetch) para:
-        // https://sua-evolution-api.com/message/sendText/INSTANCE_NAME
-        // body: { "number": patientPhone, "text": aiResponse }
-
-        // Por enquanto, enviamos um 200 OK para o webhook não estourar timeout
         res.status(200).json({ success: true, aiResponse });
 
     } catch (err) {
@@ -156,5 +213,5 @@ DICA FINAL DE OURO: Se você não sabe a resposta, seja honesto de forma Premium
 
 const PORT = 3001;
 app.listen(PORT, () => {
-    console.log(`🤖 LumiaOS Webhook Server rodando na porta ${PORT}`);
+    console.log(`LUMIA Webhook Server rodando na porta ${PORT}`);
 });
