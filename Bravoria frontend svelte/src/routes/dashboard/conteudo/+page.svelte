@@ -37,10 +37,13 @@
     '🧠 Saúde mental no ambiente de trabalho'
   ];
 
+  let userId = null;
+
   onMount(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      userId = user.id;
 
       const { data: member } = await supabase
         .from('clinic_members')
@@ -67,61 +70,47 @@
     finally { loading = false; }
   });
 
-  function generateContent() {
+  async function generateContent() {
     if (!topic.trim()) return;
     generating = true;
+    generatedPack = null;
 
-    // Simula geração (no futuro: chamada à Edge Function com Claude API)
-    setTimeout(() => {
-      const specialty = settings?.specialty || 'saúde';
-      const toneLabel = settings?.tone || 'Profissional';
+    try {
+      const res = await fetch('/api/ai/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, format, clinicId, userId })
+      });
+      const data = await res.json();
 
+      if (data.error) {
+        generatedPack = {
+          topic, format,
+          idea: '⚠️ ' + data.error,
+          hook: '', visual: '', copy: '', hashtags: '',
+          generatedAt: new Date().toLocaleString('pt-BR')
+        };
+      } else {
+        generatedPack = {
+          topic, format,
+          idea: data.idea,
+          hook: data.hook,
+          visual: data.visual,
+          copy: data.copy,
+          hashtags: data.hashtags,
+          generatedAt: new Date().toLocaleString('pt-BR')
+        };
+      }
+    } catch {
       generatedPack = {
-        topic: topic,
-        format: format,
-        idea: `Série de conteúdo sobre "${topic}" para clínica de ${specialty}.`,
-        hook: getRandomHook(topic),
-        visual: getVisualSuggestion(format, topic),
-        copy: generateCopy(topic, toneLabel, format),
-        hashtags: generateHashtags(topic, specialty),
+        topic, format,
+        idea: '⚠️ Erro de conexão com o servidor.',
+        hook: '', visual: '', copy: '', hashtags: '',
         generatedAt: new Date().toLocaleString('pt-BR')
       };
+    } finally {
       generating = false;
-    }, 2000);
-  }
-
-  function getRandomHook(topic) {
-    const hooks = [
-      `Você sabia que ${topic.toLowerCase()} pode mudar completamente sua qualidade de vida?`,
-      `A verdade sobre ${topic.toLowerCase()} que ninguém te contou.`,
-      `3 coisas que você precisa saber sobre ${topic.toLowerCase()} hoje.`,
-      `O erro mais comum quando se trata de ${topic.toLowerCase()}.`
-    ];
-    return hooks[Math.floor(Math.random() * hooks.length)];
-  }
-
-  function getVisualSuggestion(fmt, topic) {
-    if (fmt === 'instagram') return `Foto profissional do consultório com texto overlay: "${topic}". Cores suaves, boa iluminação.`;
-    if (fmt === 'stories') return `Slide 1: Pergunta provocativa. Slide 2: Dado surpreendente. Slide 3: Dica prática. Slide 4: CTA para agendar.`;
-    if (fmt === 'reels') return `Câmera frontal do profissional falando, com cortes dinâmicos e texto animado. 30-45 segundos.`;
-    return `Imagem de destaque com título chamativo e preview do artigo.`;
-  }
-
-  function generateCopy(topic, tone, fmt) {
-    const toneMap = {
-      'Profissional': 'com linguagem técnica acessível e embasamento científico',
-      'Humanizado': 'de forma acolhedora, empática e próxima do paciente',
-      'Direto': 'de forma objetiva, clara e sem rodeios',
-      'Premium': 'com sofisticação, exclusividade e cuidado nos detalhes'
-    };
-    return `[Conteúdo será gerado pela IA Claude]\n\nTópico: ${topic}\nFormato: ${formats.find(f => f.id === fmt)?.label}\nTom: ${tone} — ${toneMap[tone] || ''}\n\n💡 Quando a API Anthropic for conectada, a IA vai gerar:\n• Legenda completa otimizada para engajamento\n• Adaptada ao tom de voz da sua clínica\n• Com CTA personalizado para agendamento\n• Baseada nas informações do Treinamento da IA`;
-  }
-
-  function generateHashtags(topic, specialty) {
-    const base = ['#saude', '#bemestar', '#clinica', '#cuidados'];
-    const topicTag = '#' + topic.toLowerCase().replace(/\s+/g, '').replace(/[^a-záéíóúãõê]/gi, '').slice(0, 20);
-    const specTag = '#' + specialty.toLowerCase().replace(/\s+/g, '');
-    return [...new Set([topicTag, specTag, ...base])].slice(0, 8).join(' ');
+    }
   }
 
   async function saveDraft() {
@@ -139,6 +128,7 @@
       savedPacks = data ?? [];
     }
   }
+
 </script>
 
 <svelte:head><title>Conteúdo IA • Lumia</title></svelte:head>

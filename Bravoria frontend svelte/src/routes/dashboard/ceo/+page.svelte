@@ -16,11 +16,49 @@
   let showUpgrade = false;
 
   let insights = [];
+  let chatMessages = [];
+  let chatInput = '';
+  let chatLoading = false;
+  let userId = null;
+
+  const quickQuestions = [
+    '📊 Como posso aumentar meu faturamento este mês?',
+    '🎯 Quais pacientes devo reativar?',
+    '📱 Como melhorar minha presença digital?',
+    '⚡ O que posso automatizar na minha clínica?'
+  ];
+
+  async function sendChat(text) {
+    const msg = text || chatInput.trim();
+    if (!msg || chatLoading) return;
+    chatInput = '';
+    chatMessages = [...chatMessages, { role: 'user', content: msg }];
+    chatLoading = true;
+
+    try {
+      const res = await fetch('/api/ai/ceo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, clinicId, userId })
+      });
+      const data = await res.json();
+      if (data.reply) {
+        chatMessages = [...chatMessages, { role: 'assistant', content: data.reply }];
+      } else {
+        chatMessages = [...chatMessages, { role: 'assistant', content: '⚠️ ' + (data.error || 'Erro ao consultar a IA.') }];
+      }
+    } catch {
+      chatMessages = [...chatMessages, { role: 'assistant', content: '⚠️ Erro de conexão com o servidor.' }];
+    } finally {
+      chatLoading = false;
+    }
+  }
 
   onMount(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      userId = user.id;
 
       const { data: member } = await supabase
         .from('clinic_members')
@@ -140,18 +178,43 @@
 
     <div class="coming-soon-card" in:fly={{ y: 20, duration: 400, delay: insights.length * 100 + 100 }}>
       <div class="coming-header">
-        <span class="lock-icon">🔒</span>
-        <h3>Próximas atualizações da IA</h3>
+        <span class="lock-icon">🧠</span>
+        <h3>Pergunte ao CEO Virtual</h3>
       </div>
-      <div class="coming-grid">
-        <div class="coming-item">
-          <strong>Análise de no-show</strong>
-          <span>Previsão de quais pacientes têm maior chance de faltar.</span>
+
+      <!-- Quick Questions -->
+      {#if chatMessages.length === 0}
+        <div class="quick-grid">
+          {#each quickQuestions as q}
+            <button class="quick-btn" on:click={() => sendChat(q.slice(2).trim())}>{q}</button>
+          {/each}
         </div>
-        <div class="coming-item">
-          <strong>Reativação automática</strong>
-          <span>Mapeamento de pacientes ociosos há mais de 6 meses.</span>
-        </div>
+      {/if}
+
+      <!-- Chat Messages -->
+      <div class="chat-messages">
+        {#each chatMessages as msg}
+          <div class="chat-msg {msg.role}" in:fly={{ y: 10, duration: 200 }}>
+            <div class="msg-avatar">{msg.role === 'user' ? '👤' : '🧠'}</div>
+            <div class="msg-bubble">
+              <p>{msg.content}</p>
+            </div>
+          </div>
+        {/each}
+        {#if chatLoading}
+          <div class="chat-msg assistant">
+            <div class="msg-avatar">🧠</div>
+            <div class="msg-bubble typing">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            </div>
+          </div>
+        {/if}
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input-row">
+        <input type="text" bind:value={chatInput} placeholder="Pergunte algo sobre sua clínica..." on:keydown={(e) => e.key === 'Enter' && sendChat()} />
+        <button class="btn-send" on:click={() => sendChat()} disabled={chatLoading || !chatInput.trim()}>↑</button>
       </div>
     </div>
   {/if}
@@ -259,5 +322,37 @@
     .ins-action { width: 100%; }
     .btn-cta { width: 100%; text-align: center; box-sizing: border-box; }
     .coming-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Chat UI */
+  .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: 1rem; }
+  .quick-btn { background: #1a1a1a; border: 1px solid #2a2a2a; color: #aaa; padding: .65rem .75rem; border-radius: 10px; font-size: .8rem; font-weight: 500; cursor: pointer; text-align: left; transition: 0.2s; }
+  .quick-btn:hover { border-color: #E5C100; color: #E5C100; }
+
+  .chat-messages { display: flex; flex-direction: column; gap: .75rem; max-height: 400px; overflow-y: auto; margin-bottom: 1rem; padding: .5rem 0; }
+  .chat-msg { display: flex; gap: .75rem; align-items: flex-start; }
+  .chat-msg.assistant { flex-direction: row; }
+  .chat-msg.user { flex-direction: row-reverse; }
+  .msg-avatar { width: 32px; height: 32px; border-radius: 50%; background: #1a1a1a; display: flex; align-items: center; justify-content: center; font-size: .9rem; flex-shrink: 0; border: 1px solid #2a2a2a; }
+  .msg-bubble { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: .75rem 1rem; max-width: 75%; }
+  .chat-msg.user .msg-bubble { background: rgba(229,193,0,0.08); border-color: rgba(229,193,0,0.2); }
+  .msg-bubble p { color: #ccc; font-size: .85rem; line-height: 1.6; margin: 0; white-space: pre-wrap; }
+  .chat-msg.user .msg-bubble p { color: #E5C100; }
+
+  .msg-bubble.typing { display: flex; gap: 4px; align-items: center; padding: .6rem 1rem; }
+  .dot { width: 6px; height: 6px; background: #555; border-radius: 50%; animation: dotBounce 1.2s infinite; }
+  .dot:nth-child(2) { animation-delay: .2s; }
+  .dot:nth-child(3) { animation-delay: .4s; }
+  @keyframes dotBounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
+
+  .chat-input-row { display: flex; gap: .5rem; }
+  .chat-input-row input { flex: 1; background: #0A0A0A; border: 1px solid #2a2a2a; border-radius: 12px; padding: .8rem 1rem; color: #fff; font-size: .9rem; outline: none; }
+  .chat-input-row input:focus { border-color: #E5C100; }
+  .btn-send { width: 44px; height: 44px; background: #E5C100; color: #000; border: none; border-radius: 12px; font-size: 1.2rem; font-weight: 900; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+  .btn-send:hover { background: #fce141; }
+  .btn-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  @media (max-width: 768px) {
+    .quick-grid { grid-template-columns: 1fr; }
   }
 </style>
