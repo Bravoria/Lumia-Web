@@ -157,8 +157,8 @@
         <p class="muted">Isso define o “cérebro” do seu atendente e o padrão do seu conteúdo.</p>
       </div>
 
-      <button class="btn" on:click={saveSettings} disabled={isSaving}>
-        {isSaving ? 'Salvando...' : 'Salvar'}
+      <button class="btn-save" on:click={saveSettings} disabled={isSaving}>
+        {isSaving ? '⏳ Salvando...' : '💾 Salvar Configurações'}
       </button>
     </div>
 
