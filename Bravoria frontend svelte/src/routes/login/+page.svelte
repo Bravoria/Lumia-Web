@@ -47,6 +47,27 @@
       loading = false;
     }
   }
+
+  let resetSent = false;
+  async function forgotPassword() {
+    if (!email.trim()) {
+      errorMsg = 'Digite seu email acima para recuperar a senha.';
+      return;
+    }
+    loading = true;
+    errorMsg = '';
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/login`
+      });
+      if (error) throw error;
+      resetSent = true;
+    } catch (e) {
+      errorMsg = e?.message ?? 'Erro ao enviar email de recuperação.';
+    } finally {
+      loading = false;
+    }
+  }
 </script>
 
 <main class="wrap">
@@ -76,6 +97,12 @@
         Criar conta
       </button>
     </div>
+
+    {#if resetSent}
+      <div class="success-msg">📧 Email de recuperação enviado! Verifique sua caixa de entrada.</div>
+    {:else}
+      <button class="forgot-link" on:click={forgotPassword} disabled={loading}>Esqueci minha senha</button>
+    {/if}
   </div>
 </main>
 
@@ -97,4 +124,8 @@
   button:disabled{ opacity:.45; cursor:not-allowed; }
   .ghost{ color:#bbb; }
   .err{ margin-top:12px; color:#ff6b6b; font-size:13px; text-align: center; font-weight: 500;}
+  .forgot-link { background: none; border: none; color: #777; font-size: 12px; cursor: pointer; margin-top: 16px; width: 100%; text-align: center; transition: color 0.2s; padding: 4px; }
+  .forgot-link:hover:not(:disabled) { color: #E5C100; text-decoration: underline; }
+  .forgot-link:disabled { opacity: 0.4; cursor: not-allowed; }
+  .success-msg { margin-top: 16px; color: #4ade80; font-size: 13px; text-align: center; font-weight: 500; }
 </style>

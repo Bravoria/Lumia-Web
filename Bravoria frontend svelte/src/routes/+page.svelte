@@ -25,12 +25,12 @@
       limitations: ['Sem CEO Virtual', 'Sem agendamento online', 'Sem WhatsApp IA']
     },
     {
-      name: 'Pro', price: 197, priceAnnual: 164, desc: 'Para clínicas que querem crescer', highlight: true, badge: 'Mais popular', cta: 'Testar 7 dias grátis',
+      name: 'Pro', price: 297, priceAnnual: 247, desc: 'Para clínicas que querem crescer', highlight: true, badge: 'Mais popular', cta: 'Testar 7 dias grátis',
       features: ['Até 5 usuários', 'Pacientes ilimitados', 'Agendamentos ilimitados', 'CEO Virtual com IA', 'Agendamento online (link)', 'FAQ ilimitado', 'Relatórios avançados', 'Geração de conteúdo com IA', 'Suporte por chat'],
       limitations: ['Sem WhatsApp IA']
     },
     {
-      name: 'Business', price: 497, priceAnnual: 414, desc: 'Para clínicas de alto volume', highlight: false, cta: 'Falar com consultor',
+      name: 'Business', price: 797, priceAnnual: 647, desc: 'Para clínicas de alto volume', highlight: false, cta: 'Falar com consultor',
       features: ['Usuários ilimitados', 'Tudo do Pro incluído', 'WhatsApp com agente IA 24h', 'Pipeline com automações', 'Relatórios com exportação', 'Suporte prioritário', 'Onboarding dedicado'],
       limitations: []
     }

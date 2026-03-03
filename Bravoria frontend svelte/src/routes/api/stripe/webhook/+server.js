@@ -46,6 +46,30 @@ export async function POST({ request }) {
 
     if (event.type === 'customer.subscription.deleted') {
         const subscription = event.data.object;
+        // Busca a clínica pelo stripe_subscription_id para degradar o plano
+        const { data: sub } = await supabase
+            .from('subscriptions')
+            .select('clinic_id')
+            .eq('stripe_subscription_id', subscription.id)
+            .maybeSingle();
+
+        if (sub?.clinic_id) {
+            const { error } = await supabase
+                .from('subscriptions')
+                .update({
+                    plan: 'starter',
+                    status: 'canceled',
+                    stripe_subscription_id: null,
+                    current_period_end: new Date().toISOString()
+                })
+                .eq('clinic_id', sub.clinic_id);
+
+            if (error) {
+                console.error('Error downgrading subscription:', error);
+            } else {
+                console.log(`Clinic ${sub.clinic_id} downgraded to Starter after cancellation.`);
+            }
+        }
     }
 
     return json({ received: true });
