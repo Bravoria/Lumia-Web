@@ -25,9 +25,9 @@
   </button>
 
   <aside class="sidebar-os" class:open={mobileMenuOpen}>
-    <div class="brand">
+    <a href="/dashboard" class="brand">
       <img src="/logo.png" alt="LumiaOS" class="main-logo" />
-    </div>
+    </a>
 
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -93,11 +93,18 @@
 
 <style>
   :global(body) { background: #0F0F11; margin: 0; color: #fff; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+
+  /* Custom Scrollbar */
+  :global(::-webkit-scrollbar) { width: 6px; height: 6px; }
+  :global(::-webkit-scrollbar-track) { background: transparent; }
+  :global(::-webkit-scrollbar-thumb) { background: #2a2a2a; border-radius: 3px; }
+  :global(::-webkit-scrollbar-thumb:hover) { background: #444; }
+  :global(*) { scrollbar-width: thin; scrollbar-color: #2a2a2a transparent; }
   .os-container { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
 
   /* Sidebar */
   .sidebar-os { width: 240px; border-right: 1px solid #1A1A1E; background: #0F0F11; padding: 1.5rem 1rem; flex-shrink: 0; display: flex; flex-direction: column; overflow-y: auto; }
-  .brand { display: flex; align-items: center; margin-bottom: 2rem; justify-content: flex-start; }
+  .brand { display: flex; align-items: center; margin-bottom: 2rem; justify-content: flex-start; text-decoration: none; }
   .main-logo { height: auto; width: 140px; object-fit: contain; }
 
   .nav-group { margin-bottom: 1.25rem; }
@@ -118,7 +125,7 @@
   .pulse { width: 6px; height: 6px; background: #22C55E; border-radius: 50%; box-shadow: 0 0 10px #22C55E; }
   .quick-stats { display: flex; gap: 20px; align-items: center; color: #555; }
 
-  .btn-os-action { background: #fff; color: #000; border: none; padding: 4px 12px; border-radius: 4px; font-weight: 900; font-size: 0.65rem; cursor: pointer; text-decoration: none; }
+  .btn-os-action { background: #fff; color: #000; border: none; padding: 4px 12px; border-radius: 6px; font-weight: 700; font-size: 0.65rem; cursor: pointer; text-decoration: none; font-family: 'Inter', sans-serif; letter-spacing: 0.02em; }
   .btn-os-action:hover { background: #E5C100; }
   .os-content { flex: 1; overflow-y: auto; padding: 2rem; }
 
