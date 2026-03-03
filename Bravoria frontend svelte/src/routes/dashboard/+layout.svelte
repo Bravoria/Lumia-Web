@@ -53,9 +53,9 @@
       </div>
 
       <div class="nav-group">
-        <p class="nav-label">Financeiro</p>
-        <a href="/dashboard/receita" class:active={path === '/dashboard/receita'}>💰 Receita</a>
-        <a href="/dashboard/relatorios" class:active={path === '/dashboard/relatorios'}>📈 Performance</a>
+        <p class="nav-label">Métricas</p>
+        <a href="/dashboard/relatorios" class:active={path === '/dashboard/relatorios'}>📈 Relatórios</a>
+        <a href="/dashboard/receita" class:active={path === '/dashboard/receita'}>📊 Desempenho</a>
       </div>
 
       <div class="nav-group bottom-group">

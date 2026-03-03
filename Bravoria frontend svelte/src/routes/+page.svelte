@@ -121,7 +121,7 @@
 </script>
 
 <svelte:head>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <title>Lumia — IA que opera sua clínica</title>
   <meta name="description" content="Automatize atendimento, agendamentos e conteúdo da sua clínica com inteligência artificial. Para clínicas, estéticas e profissionais de saúde." />
 </svelte:head>
@@ -458,9 +458,9 @@
 
 <style>
   /* ===== RESET & BASE ===== */
-  :global(body) { margin: 0; background: #050507; color: #fff; }
-  .page { font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
-  h1, h2, h3 { font-family: 'Outfit', sans-serif; }
+  :global(body) { margin: 0; background: #0A0A0C; color: #fff; }
+  .page { font-family: 'Inter', -apple-system, sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+  h1, h2, h3 { font-family: 'Inter', sans-serif; }
   .gold { color: #E5C100; }
 
   /* ===== NAV ===== */
@@ -475,8 +475,8 @@
   .nav-actions { display: flex; align-items: center; gap: 1rem; }
   .link-login { color: #999; text-decoration: none; font-size: 0.9rem; font-weight: 500; }
   .link-login:hover { color: #fff; }
-  .btn-nav { background: #E5C100; color: #000; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
-  .btn-nav:hover { background: #fce141; transform: translateY(-1px); }
+  .btn-nav { background: #E5C100; color: #000; border: none; padding: 0.6rem 1.2rem; border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+  .btn-nav:hover { background: #fce141; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(229,193,0,0.15); }
 
   /* ===== HERO ===== */
   .hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8rem 2rem 4rem; text-align: center; overflow: hidden; }
@@ -496,7 +496,7 @@
   .hero-sub { color: #888; font-size: 1.15rem; line-height: 1.7; max-width: 600px; margin: 0 auto 2rem; }
 
   .hero-cta { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; margin-bottom: 2.5rem; }
-  .btn-primary-lg { display: inline-flex; align-items: center; gap: 10px; background: #E5C100; color: #000; border: none; padding: 1rem 2rem; border-radius: 12px; font-size: 1.05rem; font-weight: 800; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.25s; letter-spacing: -0.3px; }
+  .btn-primary-lg { display: inline-flex; align-items: center; gap: 10px; background: #E5C100; color: #000; border: none; padding: 1rem 2rem; border-radius: 12px; font-size: 1.05rem; font-weight: 800; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.25s; letter-spacing: -0.3px; }
   .btn-primary-lg:hover { background: #fce141; transform: translateY(-2px); box-shadow: 0 12px 30px rgba(229,193,0,0.2); }
   .btn-arrow { font-size: 1.2rem; transition: transform 0.2s; }
   .btn-primary-lg:hover .btn-arrow { transform: translateX(4px); }
@@ -566,7 +566,7 @@
   .how { padding: 6rem 2rem; max-width: 900px; margin: 0 auto; }
   .steps { display: flex; align-items: flex-start; gap: 0; justify-content: center; }
   .step { display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; padding: 0 1.5rem; }
-  .step-num { font-family: 'Outfit', sans-serif; font-size: 2.5rem; font-weight: 900; color: #E5C100; opacity: 0.3; margin-bottom: 1rem; }
+  .step-num { font-family: 'Inter', sans-serif; font-size: 2.5rem; font-weight: 900; color: #E5C100; opacity: 0.3; margin-bottom: 1rem; }
   .step-content h3 { font-size: 1.1rem; font-weight: 800; margin: 0 0 0.5rem; }
   .step-content p { color: #666; font-size: 0.9rem; line-height: 1.5; margin: 0; }
   .step-line { width: 60px; height: 1px; background: #222; margin-top: 2.5rem; flex-shrink: 0; }
@@ -601,7 +601,7 @@
   .plan-desc { color: #666; font-size: 0.85rem; margin: 0; }
 
   .plan-price { margin-bottom: 1.5rem; display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
-  .price-big { font-family: 'Outfit', sans-serif; font-size: 2.8rem; font-weight: 900; letter-spacing: -2px; }
+  .price-big { font-family: 'Inter', sans-serif; font-size: 2.8rem; font-weight: 900; letter-spacing: -2px; }
   .price-period { color: #555; font-size: 0.9rem; font-weight: 500; }
   .price-original { color: #444; font-size: 0.8rem; text-decoration: line-through; margin-left: 8px; }
 
