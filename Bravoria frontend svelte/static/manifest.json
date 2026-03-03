@@ -1,0 +1,22 @@
+{
+    "name": "LumiaOS",
+    "short_name": "Lumia",
+    "description": "O cérebro da operação da sua clínica — IA, agenda, CRM e conteúdo num só lugar.",
+    "start_url": "/dashboard",
+    "display": "standalone",
+    "background_color": "#0A0A0A",
+    "theme_color": "#E5C100",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/logo.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/logo.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

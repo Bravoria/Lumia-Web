@@ -28,6 +28,25 @@
     '⚡ O que posso automatizar na minha clínica?'
   ];
 
+  // Carregar histórico salvo
+  function loadChatHistory() {
+    try {
+      const saved = localStorage.getItem(`lumia_ceo_chat_${clinicId}`);
+      if (saved) chatMessages = JSON.parse(saved);
+    } catch {}
+  }
+
+  function saveChatHistory() {
+    try {
+      localStorage.setItem(`lumia_ceo_chat_${clinicId}`, JSON.stringify(chatMessages.slice(-50)));
+    } catch {}
+  }
+
+  function clearHistory() {
+    chatMessages = [];
+    localStorage.removeItem(`lumia_ceo_chat_${clinicId}`);
+  }
+
   async function sendChat(text) {
     const msg = text || chatInput.trim();
     if (!msg || chatLoading) return;
@@ -51,6 +70,7 @@
       chatMessages = [...chatMessages, { role: 'assistant', content: '⚠️ Erro de conexão com o servidor.' }];
     } finally {
       chatLoading = false;
+      saveChatHistory();
     }
   }
 
@@ -105,6 +125,7 @@
       }
 
       insights = newInsights;
+      loadChatHistory();
 
     } catch (e) {
       console.error(e);
@@ -180,6 +201,9 @@
       <div class="coming-header">
         <span class="lock-icon">🧠</span>
         <h3>Pergunte ao CEO Virtual</h3>
+        {#if chatMessages.length > 0}
+          <button class="clear-btn" on:click={clearHistory} title="Limpar histórico">🗑️</button>
+        {/if}
       </div>
 
       <!-- Quick Questions -->
@@ -303,6 +327,8 @@
   .coming-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; border-bottom: 1px solid #222; padding-bottom: 1rem; }
   .lock-icon { font-size: 1.2rem; filter: grayscale(1) opacity(0.6); }
   .coming-header h3 { color: #888; font-size: 1rem; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+  .clear-btn { background: none; border: 1px solid #333; color: #666; padding: 4px 8px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; margin-left: auto; transition: 0.2s; }
+  .clear-btn:hover { border-color: #ef4444; color: #ef4444; }
 
   .coming-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
   .coming-item { display: flex; flex-direction: column; gap: 0.3rem; }
