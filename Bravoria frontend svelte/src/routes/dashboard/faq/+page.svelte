@@ -688,7 +688,7 @@ Responda no máximo em 3 parágrafos"
 
   .qa-summary { display: flex; gap: .75rem; align-items: flex-start; padding-top: .5rem; border-top: 1px solid #1A1A1E; }
 
-  textarea, input[type="text"], input:not([type]) {
+  textarea, input:not([type]) {
     width: 100%; background: #0A0A0A; border: 1px solid #2a2a2a; border-radius: 10px;
     padding: .85rem 1rem; color: #fff; font-size: .9rem; outline: none; resize: vertical;
     font-family: 'Inter', sans-serif; box-sizing: border-box;

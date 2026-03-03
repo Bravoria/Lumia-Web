@@ -354,3 +354,4 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   @media(max-width: 768px) { .grid { grid-template-columns: 1fr; } .stats-row { flex-direction: column; } }
+</style>
