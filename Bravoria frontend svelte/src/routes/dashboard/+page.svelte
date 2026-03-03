@@ -35,6 +35,7 @@
   let planName = 'Starter';
 
   onMount(async () => {
+    const startTime = Date.now();
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;

@@ -24,6 +24,7 @@
   let userId = null;
 
   onMount(async () => {
+    const startObjTime = Date.now();
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error || !session) {
       goto('/login');
@@ -45,7 +46,7 @@
       return;
     }
 
-    const elapsed = Date.now() - startTime;
+    const elapsed = Date.now() - startObjTime;
     if (elapsed < 300) {
       await new Promise(r => setTimeout(r, 300 - elapsed));
     }
