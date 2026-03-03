@@ -7,6 +7,7 @@
 
   let loading = true;
   let clinicId = null;
+  let demoMode = false;
 
   // KPIs reais
   let totalPatients = 0;
@@ -45,7 +46,54 @@
         .eq('user_id', user.id).limit(1).maybeSingle();
 
       clinicId = member?.clinic_id ?? null;
-      if (!clinicId) return;
+      if (!clinicId) {
+        // Demo mode — dados fictícios para visualização
+        demoMode = true;
+        clinicId = 'demo';
+        totalPatients = 47;
+        activePatients = 32;
+        leadPatients = 8;
+        inactivePatients = 7;
+        totalAppointments = 156;
+        monthAppointments = 12;
+        completedAppointments = 134;
+        noShowCount = 9;
+        noShowRate = 6;
+        totalFaq = 8;
+        totalPosts = 5;
+        hasSettings = true;
+        healthScore = 85;
+        memberCount = 3;
+        planName = 'Pro';
+
+        // Dados fictícios para o gráfico
+        const now = new Date();
+        const demoValues = [8, 14, 22, 18, 28, 12];
+        const demoCompleted = [6, 12, 19, 15, 24, 10];
+        monthlyData = [];
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const key = d.toISOString().slice(0, 7);
+          monthlyData.push({ month: key, total: demoValues[5 - i], completed: demoCompleted[5 - i] });
+        }
+
+        // Pacientes e agendamentos fictícios para componentes filhos
+        patients = Array.from({ length: 47 }, (_, i) => ({
+          id: `demo-${i}`,
+          name: `Paciente ${i + 1}`,
+          status: i < 32 ? 'ativo' : i < 40 ? 'lead' : 'inativo',
+          clinic_id: 'demo'
+        }));
+        appointments = Array.from({ length: 12 }, (_, i) => ({
+          id: `demo-appt-${i}`,
+          date: new Date().toISOString().slice(0, 10),
+          status: i < 10 ? 'concluido' : 'no-show',
+          clinic_id: 'demo'
+        }));
+
+        loading = false;
+        return;
+      }
 
       // Buscar todos os dados em paralelo
       const [patientsRes, appointmentsRes, faqRes, postsRes, settingsRes, membersRes, subscriptionRes] = await Promise.all([
@@ -177,6 +225,12 @@
   </div>
 {:else}
   <div class="os-v2-container" in:fade>
+
+    {#if demoMode}
+      <div class="demo-banner">
+        <span>🎯</span> Modo demonstração — <a href="/setup">vincule sua clínica</a> para ver dados reais
+      </div>
+    {/if}
 
     <div class="grid-4">
       <div class="card-os" in:fly={{ y: 15, duration: 300 }}>
@@ -315,6 +369,10 @@
   .skeleton-line.short { width: 60%; height: 10px; margin-bottom: 12px; }
   .skeleton-line.tall { width: 40%; height: 28px; }
   @keyframes shimmer { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  /* Demo banner */
+  .demo-banner { background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.08)); border: 1px solid rgba(139,92,246,0.15); border-radius: 10px; padding: 0.65rem 1rem; font-size: 0.78rem; color: #aaa; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .demo-banner a { color: #8b5cf6; text-decoration: underline; font-weight: 700; }
 
   /* Empty state */
   .empty-state { text-align: center; padding: 4rem 2rem; background: #16161A; border: 1px solid #1A1A1E; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
