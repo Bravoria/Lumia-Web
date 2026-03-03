@@ -45,6 +45,10 @@
       return;
     }
 
+    const elapsed = Date.now() - startTime;
+    if (elapsed < 300) {
+      await new Promise(r => setTimeout(r, 300 - elapsed));
+    }
     isLoadingSession = false;
   });
 

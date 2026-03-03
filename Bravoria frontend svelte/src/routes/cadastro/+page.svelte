@@ -80,17 +80,17 @@
       <form on:submit|preventDefault={handleRegister}>
         <div class="input-group">
           <label for="fullName">Nome Completo</label>
-          <input type="text" id="fullName" bind:value={fullName} placeholder="Seu nome completo" required/>
+          <input type="text" id="fullName" bind:value={fullName} placeholder="Seu nome completo" required disabled={isLoading} class:opacity-50={isLoading} />
         </div>
 
         <div class="input-group">
           <label for="email">E-mail</label>
-          <input type="email" id="email" bind:value={email} placeholder="seu@email.com" required/>
+          <input type="email" id="email" bind:value={email} placeholder="seu@email.com" required disabled={isLoading} class:opacity-50={isLoading} />
         </div>
 
         <div class="input-group">
           <label for="password">Senha</label>
-          <input type="password" id="password" bind:value={password} placeholder="Mínimo 6 caracteres" required/>
+          <input type="password" id="password" bind:value={password} placeholder="Mínimo 6 caracteres" required disabled={isLoading} class:opacity-50={isLoading} />
         </div>
 
         <button type="submit" class="btn-primary" disabled={isLoading}>
@@ -235,11 +235,12 @@
     color: #FFFFFF;
     font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
-    transition: border-color 0.2s;
+    transition: all 0.2s;
   }
 
   input::placeholder { color: #444444; }
-  input:focus { outline: none; border-color: #FFFFFF; }
+  input:focus:not(:disabled) { outline: none; border-color: #FFFFFF; }
+  .opacity-50 { opacity: 0.5; }
 
   .btn-primary {
     width: 100%;

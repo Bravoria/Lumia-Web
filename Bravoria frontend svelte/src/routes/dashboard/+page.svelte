@@ -111,6 +111,11 @@
     } catch (e) {
       console.error('Dashboard load error:', e);
     } finally {
+      // Garantir pelo menos 400ms de loading para evitar piscar na tela se carregar muito rápido
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 400) {
+        await new Promise(r => setTimeout(r, 400 - elapsed));
+      }
       loading = false;
     }
   });
@@ -156,14 +161,49 @@
 <svelte:head><title>Dashboard • LumiaOS</title></svelte:head>
 
 {#if loading}
-  <div class="os-v2-container" in:fade>
+  <div class="os-v2-container" in:fade={{ duration: 200 }} out:fade={{ duration: 200 }}>
+    <!-- Skeleton Top Cards -->
     <div class="grid-4">
       {#each Array(4) as _, i}
         <div class="card-os skeleton-card">
           <div class="skeleton-line short"></div>
-          <div class="skeleton-line tall"></div>
+          <div class="skeleton-line tall mt-2"></div>
         </div>
       {/each}
+    </div>
+
+    <!-- Skeleton Intelligence -->
+    <div class="grid-intelligence">
+      <div class="card-os skeleton-card" style="min-height: 250px;">
+        <div class="skeleton-line short mb-4"></div>
+        <div class="skeleton-line mt-2"></div>
+        <div class="skeleton-line mt-2" style="width: 80%"></div>
+        <div class="skeleton-line mt-2" style="width: 70%"></div>
+      </div>
+      <div class="card-os skeleton-card" style="min-height: 250px;">
+        <div class="skeleton-line short mb-4"></div>
+        <div class="flex-col gap-3 mt-4">
+          <div class="skeleton-line" style="height: 4px;"></div>
+          <div class="skeleton-line" style="height: 4px; width: 60%;"></div>
+          <div class="skeleton-line" style="height: 4px; width: 80%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skeleton Bottom -->
+    <div class="grid-bottom">
+      <div class="card-os skeleton-card" style="min-height: 200px;">
+        <div class="skeleton-line short mb-4"></div>
+        <div class="skeleton-line tall" style="height: 100px; border-radius: 8px;"></div>
+      </div>
+      <div class="card-os skeleton-card" style="min-height: 200px;">
+        <div class="skeleton-line short mb-4"></div>
+        <div class="flex-col gap-3 mt-4">
+          <div class="skeleton-line" style="height: 20px;"></div>
+          <div class="skeleton-line" style="height: 20px;"></div>
+          <div class="skeleton-line" style="height: 20px;"></div>
+        </div>
+      </div>
     </div>
   </div>
 {:else if !clinicId}
@@ -310,11 +350,16 @@
   .dark { color: #000 !important; }
 
   /* Skeleton */
-  .skeleton-card { min-height: 90px; }
-  .skeleton-line { background: #1A1A1E; border-radius: 4px; animation: shimmer 1.5s infinite; }
-  .skeleton-line.short { width: 60%; height: 10px; margin-bottom: 12px; }
-  .skeleton-line.tall { width: 40%; height: 28px; }
-  @keyframes shimmer { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+  .skeleton-card { display: flex; flex-direction: column; }
+  .skeleton-line { background: #1A1A1E; border-radius: 4px; animation: shimmer 2s infinite linear; }
+  .skeleton-line.short { width: 40%; height: 10px; margin-bottom: 8px; }
+  .skeleton-line.tall { width: 60%; height: 32px; }
+  .mt-2 { margin-top: 8px; }
+  .mb-4 { margin-bottom: 16px; }
+  .mt-4 { margin-top: 16px; }
+  .gap-3 { gap: 12px; }
+  .flex-col { display: flex; flex-direction: column; }
+  @keyframes shimmer { 0% { opacity: 0.3; } 50% { opacity: 0.7; } 100% { opacity: 0.3; } }
 
   /* Empty state */
   .empty-state { text-align: center; padding: 4rem 2rem; background: #16161A; border: 1px solid #1A1A1E; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
