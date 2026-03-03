@@ -86,7 +86,47 @@
 <svelte:head>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <title>Lumia — O cérebro da operação</title>
-  <meta name="description" content="Automatize atendimento, agendamentos e conteúdo da sua clínica com inteligência artificial." />
+  <meta name="description" content="Automatize atendimento, agendamentos e conteúdo da sua clínica com inteligência artificial. WhatsApp IA, CEO Virtual e muito mais." />
+  <link rel="canonical" href="https://lumia-web.vercel.app/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://lumia-web.vercel.app/" />
+  <meta property="og:title" content="Lumia — O cérebro da sua operação clínica" />
+  <meta property="og:description" content="Automatize atendimento via WhatsApp, agendamentos inteligentes e conteúdo com IA. Tudo num único painel para clínicas e consultórios." />
+  <meta property="og:image" content="https://lumia-web.vercel.app/dashboard-preview.png" />
+  <meta property="og:image:width" content="1920" />
+  <meta property="og:image:height" content="1080" />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:site_name" content="Lumia" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Lumia — O cérebro da sua operação clínica" />
+  <meta name="twitter:description" content="Automatize atendimento via WhatsApp, agendamentos e conteúdo com IA para clínicas." />
+  <meta name="twitter:image" content="https://lumia-web.vercel.app/dashboard-preview.png" />
+
+  <!-- Schema.org JSON-LD -->
+  {@html `<script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Lumia",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "Sistema operacional com IA para clínicas e consultórios. Atendimento automático via WhatsApp, agenda inteligente, CEO Virtual e geração de conteúdo.",
+    "url": "https://lumia-web.vercel.app",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "BRL",
+      "description": "Plano Starter gratuito"
+    },
+    "creator": {
+      "@type": "Organization",
+      "name": "Bravor.ia",
+      "url": "https://bravor.ia"
+    }
+  })}</script>`}
 </svelte:head>
 
 <main class="page">

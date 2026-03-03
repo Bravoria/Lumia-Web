@@ -79,7 +79,9 @@
     </header>
 
     <div class="os-content">
-      <slot />
+      <div class="page-transition">
+        <slot />
+      </div>
     </div>
   </main>
 </div>
@@ -109,9 +111,9 @@
 
   .nav-group { margin-bottom: 1.25rem; }
   .nav-label { font-size: 0.6rem; color: #3A3A3E; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 800; margin: 0 0 0.5rem 0.8rem; }
-  .nav-stack a { display: flex; align-items: center; gap: 10px; padding: 0.6rem 0.8rem; color: #555; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-radius: 8px; transition: 0.2s; }
-  .nav-stack a:hover { color: #eee; background: rgba(255,255,255,0.02); }
-  .nav-stack a.active { color: #fff; background: #16161A; border: 1px solid #222; }
+  .nav-stack a { display: flex; align-items: center; gap: 10px; padding: 0.6rem 0.8rem; color: #555; text-decoration: none; font-size: 0.85rem; font-weight: 600; border-radius: 8px; transition: all 0.25s ease; border-left: 2px solid transparent; }
+  .nav-stack a:hover { color: #eee; background: rgba(255,255,255,0.04); transform: translateX(2px); }
+  .nav-stack a.active { color: #fff; background: #16161A; border: 1px solid #222; border-left: 2px solid #fff; }
 
   .bottom-group { margin-top: auto; padding-top: 1rem; border-top: 1px solid #1A1A1E; }
   .logout-btn { display: flex; align-items: center; gap: 10px; padding: 0.6rem 0.8rem; color: #555; background: none; border: none; font-size: 0.85rem; font-weight: 600; border-radius: 8px; cursor: pointer; width: 100%; text-align: left; transition: 0.2s; font-family: inherit; }
@@ -122,12 +124,16 @@
   .system-status-bar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid #1A1A1E; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; }
   .status-green { background: rgba(34, 197, 94, 0.03); color: #22C55E; }
   .status-info { display: flex; align-items: center; gap: 10px; }
-  .pulse { width: 6px; height: 6px; background: #22C55E; border-radius: 50%; box-shadow: 0 0 10px #22C55E; }
+  .pulse { width: 6px; height: 6px; background: #22C55E; border-radius: 50%; box-shadow: 0 0 10px #22C55E; animation: pulseGlow 2s ease-in-out infinite; }
+  @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 6px #22C55E; } 50% { box-shadow: 0 0 16px #22C55E, 0 0 30px rgba(34,197,94,0.3); } }
   .quick-stats { display: flex; gap: 20px; align-items: center; color: #555; }
 
-  .btn-os-action { background: #fff; color: #000; border: none; padding: 4px 12px; border-radius: 6px; font-weight: 700; font-size: 0.65rem; cursor: pointer; text-decoration: none; font-family: 'Inter', sans-serif; letter-spacing: 0.02em; }
-  .btn-os-action:hover { background: #E5C100; }
+  .btn-os-action { background: #fff; color: #000; border: none; padding: 4px 12px; border-radius: 6px; font-weight: 700; font-size: 0.65rem; cursor: pointer; text-decoration: none; font-family: 'Inter', sans-serif; letter-spacing: 0.02em; transition: all 0.2s ease; }
+  .btn-os-action:hover { background: #e0e0e0; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(255,255,255,0.1); }
   .os-content { flex: 1; overflow-y: auto; padding: 2rem; }
+
+  .page-transition { animation: pageIn 0.35s ease both; }
+  @keyframes pageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
   /* Mobile */
   .mobile-toggle { display: none; position: fixed; top: 12px; left: 12px; z-index: 200; background: #16161A; border: 1px solid #222; color: #fff; width: 40px; height: 40px; border-radius: 8px; font-size: 1.2rem; cursor: pointer; }
