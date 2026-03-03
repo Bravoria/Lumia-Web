@@ -138,7 +138,7 @@
 
 <div class="wrap">
   {#if loading}
-    <div class="loading-state" out:fade={{ duration: 200 }}>
+    <div class="loading-state">
       <div class="scan-line"></div>
       <div class="skeleton-card"></div>
       <div class="skeleton-card o70"></div>
