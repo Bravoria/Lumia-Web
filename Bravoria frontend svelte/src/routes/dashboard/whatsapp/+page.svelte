@@ -1,24 +1,29 @@
 ﻿<script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { supabase } from '$lib/supabase.js';
   import { fade, fly } from 'svelte/transition';
   import { getClinicPlan, canAccess } from '$lib/planGuard.js';
   import UpgradeModal from '$lib/components/UpgradeModal.svelte';
 
-  let connectionState = 'disconnected'; // disconnected, qr_loading, qr_ready, scanning, connecting, online
+  let connectionState = 'disconnected';
   let loading = true;
   let planInfo = null;
   let showUpgrade = false;
   let hasAccess = false;
   let progressVal = 0;
-  
-  // Fake Stats
+
+  let clinicId = null;
+  let qrCodeBase64 = null;
+  let connectionError = null;
+
   let msgsHoje = 0;
   let leadsHoje = 0;
   let agendamentosHoje = 0;
-
-  // AI settings
   let aiEnabled = true;
+  let pollingInterval;
+
+  // URL do backend Node.js (via proxy do Vite em dev, ou direto em produção)
+  const ENGINE_URL = '';
 
   onMount(async () => {
     try {
@@ -29,9 +34,15 @@
         .select('clinic_id')
         .eq('user_id', user.id).limit(1).maybeSingle();
       if (!member?.clinic_id) return;
-      
-      planInfo = await getClinicPlan(member.clinic_id);
+
+      clinicId = member.clinic_id;
+      planInfo = await getClinicPlan(clinicId);
       hasAccess = canAccess(planInfo.limits, 'whatsapp_ai');
+
+      if (hasAccess) {
+        await checkStatus();
+        pollingInterval = setInterval(checkStatus, 3000);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -39,46 +50,46 @@
     }
   });
 
-  function startPairing() {
-    connectionState = 'qr_loading';
-    setTimeout(() => {
-      connectionState = 'qr_ready';
-    }, 1500);
-  }
+  onDestroy(() => {
+    if (pollingInterval) clearInterval(pollingInterval);
+  });
 
-  function simulateScan() {
-    if (connectionState !== 'qr_ready') return;
-    connectionState = 'scanning';
-    setTimeout(() => {
-      connectionState = 'connecting';
-      let int = setInterval(() => {
-        progressVal += 15;
-        if (progressVal >= 100) {
-          clearInterval(int);
-          connectionState = 'online';
-          startFakeStats();
-        }
-      }, 500);
-    }, 1500);
-  }
+  async function checkStatus() {
+    try {
+      const res = await fetch(`${ENGINE_URL}/api/whatsapp/status`);
+      const data = await res.json();
+      if (!data.success) return;
 
-  function startFakeStats() {
-    msgsHoje = Math.floor(Math.random() * 40) + 12; // Base
-    leadsHoje = Math.floor(msgsHoje * 0.3);
-    agendamentosHoje = Math.floor(leadsHoje * 0.4);
+      const st = data.data;
 
-    setInterval(() => {
-      if (aiEnabled && connectionState === 'online') {
-        if (Math.random() > 0.7) {
-          msgsHoje++;
-          if (Math.random() > 0.8) leadsHoje++;
-          if (Math.random() > 0.9) agendamentosHoje++;
-        }
+      if (st.state === 'qr_ready' && st.qrCode) {
+        qrCodeBase64 = st.qrCode;
+        connectionState = 'qr_ready';
+      } else if (st.state === 'online') {
+        connectionState = 'online';
+        msgsHoje = st.stats?.msgs || 0;
+      } else if (st.state === 'disconnected') {
+        connectionState = 'disconnected';
       }
-    }, 3500);
+    } catch (e) {
+      if (connectionState !== 'disconnected') {
+        connectionState = 'disconnected';
+        connectionError = 'Motor de IA offline. Inicie o server_node.';
+      }
+    }
   }
 
-  function disconnect() {
+  async function startPairing() {
+    connectionState = 'qr_loading';
+    connectionError = null;
+    qrCodeBase64 = null;
+    await checkStatus();
+  }
+
+  async function disconnect() {
+    try {
+      await fetch(`${ENGINE_URL}/api/whatsapp/disconnect`, { method: 'POST' });
+    } catch(e) { /* ignore */ }
     connectionState = 'disconnected';
     progressVal = 0;
     msgsHoje = 0;
@@ -126,6 +137,9 @@
           <h3>Vincule o número da Clínica</h3>
           <p>O agente vai responder mensagens e agendar pacientes de forma autônoma (API Oficial Cloud).</p>
           <button class="btn-primary" on:click={startPairing}>Conectar Aparelho</button>
+          {#if connectionError}
+             <p class="error-msg" style="margin-top: 1rem; color: #EF4444; font-size: 0.85rem;">{connectionError}</p>
+          {/if}
         </div>
 
       {:else if connectionState === 'qr_loading'}
@@ -139,10 +153,8 @@
           <h3>Escaneie o QR Code</h3>
           <p class="muted-text">Abra o WhatsApp no celular da clínica > Aparelhos Conectados > Conectar um aparelho</p>
           <!-- svelte-ignore a11y_click_events_have_key_events -->
-          <!-- svelte-ignore a11y_no_static_element_interactions -->
-          <div class="qr-mockup" on:click={simulateScan}>
-            <div class="qr-image blur-effect"></div>
-            <div class="qr-overlay-hint">Clique no código para simular o scan do celular</div>
+          <div class="qr-mockup">
+            <img src={qrCodeBase64} alt="QR Code" class="real-qr-image" />
           </div>
           <button class="btn-ghost" on:click={disconnect}>Cancelar</button>
         </div>
@@ -285,11 +297,8 @@
   .empty-state h3, .qr-state h3 { color: #fff; font-size: 1.25rem; margin: 0 0 .5rem; }
   .empty-state p { color: #888; font-size: 0.95rem; margin: 0 0 2rem; max-width: 320px; line-height: 1.5; }
 
-  .qr-mockup { width: 240px; height: 240px; background: #fff; border-radius: 12px; margin: 1.5rem 0; position: relative; cursor: pointer; border: 4px solid #252525; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-  .qr-mockup:hover { transform: scale(1.02); border-color: #E5C100; }
-  .qr-image { position: absolute; inset: 0; background-image: repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), repeating-linear-gradient(45deg, #000 25%, #fff 25%, #fff 75%, #000 75%, #000); background-position: 0 0, 10px 10px; background-size: 20px 20px; opacity: 0.8; }
-  .blur-effect { filter: blur(3px); }
-  .qr-overlay-hint { position: relative; z-index: 2; background: rgba(0,0,0,0.8); color: #E5C100; font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; text-transform: uppercase; }
+  .qr-mockup { width: 240px; height: 240px; background: #fff; border-radius: 12px; margin: 1.5rem 0; position: relative; border: 4px solid #252525; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .real-qr-image { width: 100%; height: 100%; object-fit: contain; }
 
   .spinner { width: 32px; height: 32px; border: 3px solid rgba(229,193,0,0.2); border-top-color: #E5C100; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
 
