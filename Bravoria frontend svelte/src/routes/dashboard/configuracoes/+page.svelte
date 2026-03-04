@@ -165,6 +165,29 @@
     isSaving = false;
   }
 
+  async function activateBusiness() {
+    if (!myClinicId) return;
+    saving = true;
+    try {
+      const { error } = await supabase.from('subscriptions').upsert({
+        clinic_id: myClinicId,
+        plan: 'business',
+        status: 'active',
+        current_period_end: '2099-12-31T23:59:59Z'
+      }, { onConflict: 'clinic_id' });
+      
+      if (error) {
+        // Fallback: se a tabela de fato não aceitar, a gente avisa
+        alert("Erro SQL: " + error.message);
+      } else {
+        alert("💎 Plano Business Vitalício Ativado com Sucesso! Recarregue a página.");
+      }
+    } catch(e) {
+      alert("Erro fatal: " + e.message);
+    }
+    saving = false;
+  }
+
   onMount(async () => {
     await loadSettings();
     const session = await requireSession();
@@ -284,6 +307,14 @@
         bind:value={rulesRaw}
       ></textarea>
     </section>
+
+    <!-- DEV MODE BUTTON -->
+    <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px dashed #333; text-align: center;">
+      <button class="btn-dev" on:click={activateBusiness} disabled={saving}>
+        {saving ? 'Ativando...' : '💎 Ativar Plano Business Vitalício (Dev Mode)'}
+      </button>
+      <p style="color: #666; font-size: 0.75rem; margin-top: 0.5rem;">Clica aqui para burlar o paywall e testar todas as features.</p>
+    </div>
   </main>
 {/if}
 
@@ -352,5 +383,21 @@
     .grid{ grid-template-columns:1fr; }
     .top{ flex-direction:column; }
     .btn-save{ width:100%; }
+  }
+
+  .btn-dev {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #E5C100;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-dev:hover {
+    background: #E5C100;
+    color: #000;
+    border-color: #E5C100;
   }
 </style>
