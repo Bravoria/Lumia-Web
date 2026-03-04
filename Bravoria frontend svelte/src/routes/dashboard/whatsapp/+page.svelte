@@ -58,7 +58,11 @@
     try {
       const res = await fetch(`${ENGINE_URL}/api/whatsapp/status`);
       const data = await res.json();
-      if (!data.success) return;
+      if (!data.success) {
+        connectionState = 'disconnected';
+        connectionError = data.error || 'Erro ao conectar com o motor de IA.';
+        return;
+      }
 
       const st = data.data;
 
@@ -72,10 +76,8 @@
         connectionState = 'disconnected';
       }
     } catch (e) {
-      if (connectionState !== 'disconnected') {
-        connectionState = 'disconnected';
-        connectionError = 'Motor de IA offline. Inicie o server_node.';
-      }
+      connectionState = 'disconnected';
+      connectionError = 'Motor de IA offline. Verifique se o server_node está rodando.';
     }
   }
 
