@@ -13,13 +13,31 @@
 
   import { onMount } from 'svelte';
 
+  let myRole = 'receptionist';
+
   onMount(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: member } = await supabase.from('clinic_members').select('clinic_id').eq('user_id', user.id).limit(1).maybeSingle();
+      const { data: member } = await supabase.from('clinic_members').select('clinic_id, role').eq('user_id', user.id).limit(1).maybeSingle();
       if (!member?.clinic_id) return;
+      
+      myRole = member.role;
       const cid = member.clinic_id;
+
+      // Proteção de Rota (Guardrails simples)
+      const isRestrictedRoute = path === '/dashboard/receita' || 
+                                path === '/dashboard/relatorios' || 
+                                path === '/dashboard/ceo' || 
+                                path === '/dashboard/configuracoes' ||
+                                path === '/dashboard/equipe';
+
+      if (isRestrictedRoute && (myRole === 'receptionist' || myRole === 'doctor')) {
+        // Se bater direto na URL proibida, joga pro dashboard principal
+        goto('/dashboard');
+        return;
+      }
+
       const today = new Date().toISOString().slice(0, 10);
 
       // Agendamentos de hoje
@@ -78,14 +96,18 @@
         <p class="nav-label">Comando</p>
         <a href="/dashboard" class:active={path === '/dashboard'}>📊 Dashboard</a>
         <a href="/dashboard/health" class:active={path === '/dashboard/health'}>🛡️ Health Center</a>
-        <a href="/dashboard/ceo" class:active={path === '/dashboard/ceo'}>🧠 CEO Virtual</a>
+        {#if myRole === 'owner' || myRole === 'admin'}
+          <a href="/dashboard/ceo" class:active={path === '/dashboard/ceo'}>🧠 CEO Virtual</a>
+        {/if}
       </div>
 
       <div class="nav-group">
         <p class="nav-label">Operações</p>
         <a href="/dashboard/agenda" class:active={path === '/dashboard/agenda'}>📅 Agenda</a>
-        <a href="/dashboard/faq" class:active={path.startsWith('/dashboard/faq')}>🎓 Treinamento IA</a>
-        <a href="/dashboard/whatsapp" class:active={path === '/dashboard/whatsapp'}>📱 WhatsApp IA</a>
+        {#if myRole !== 'receptionist'}
+          <a href="/dashboard/faq" class:active={path.startsWith('/dashboard/faq')}>🎓 Treinamento IA</a>
+          <a href="/dashboard/whatsapp" class:active={path === '/dashboard/whatsapp'}>📱 WhatsApp IA</a>
+        {/if}
       </div>
 
       <div class="nav-group">
@@ -94,15 +116,20 @@
         <a href="/dashboard/conteudo" class:active={path === '/dashboard/conteudo'}>✍️ Conteúdo IA</a>
       </div>
 
-      <div class="nav-group">
-        <p class="nav-label">Métricas</p>
-        <a href="/dashboard/relatorios" class:active={path === '/dashboard/relatorios'}>📈 Relatórios</a>
-        <a href="/dashboard/receita" class:active={path === '/dashboard/receita'}>📊 Desempenho</a>
-      </div>
+      {#if myRole === 'owner' || myRole === 'admin'}
+        <div class="nav-group">
+          <p class="nav-label">Métricas</p>
+          <a href="/dashboard/relatorios" class:active={path === '/dashboard/relatorios'}>📈 Relatórios</a>
+          <a href="/dashboard/receita" class:active={path === '/dashboard/receita'}>📊 Desempenho</a>
+        </div>
+      {/if}
 
       <div class="nav-group bottom-group">
         <p class="nav-label">Sistema</p>
-        <a href="/dashboard/configuracoes" class:active={path === '/dashboard/configuracoes'}>⚙️ Configurações</a>
+        {#if myRole === 'owner' || myRole === 'admin'}
+          <a href="/dashboard/equipe" class:active={path === '/dashboard/equipe'}>👥 Equipe</a>
+          <a href="/dashboard/configuracoes" class:active={path === '/dashboard/configuracoes'}>⚙️ Configurações</a>
+        {/if}
         <a href="/dashboard/conta" class:active={path === '/dashboard/conta'}>👤 Minha Conta</a>
         <button class="logout-btn" on:click={handleLogout}>🚪 Sair</button>
       </div>

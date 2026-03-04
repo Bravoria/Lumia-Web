@@ -30,9 +30,10 @@
 
     // Fetch real plan
     const { data: member } = await supabase.from('clinic_members')
-      .select('clinic_id').eq('user_id', user.id).limit(1).maybeSingle();
+      .select('clinic_id, role').eq('user_id', user.id).limit(1).maybeSingle();
     if (member?.clinic_id) {
       clinicId = member.clinic_id;
+      myRole = member.role;
       const info = await getClinicPlan(clinicId);
       planName = info?.planName || 'Starter (Gratuito)';
       planKey = info?.planId || 'starter';
@@ -112,11 +113,13 @@
       <span class="k">Plano</span>
       <span class="v accent" style="display:flex; align-items:center; gap: 1rem;">
         {planName}
-        {#if planKey === 'starter' || planKey === 'free'}
-          <button class="btn-sm" on:click={() => handleUpgrade('Pro')}>🚀 Upgrade Pro</button>
-          <button class="btn-sm" on:click={() => handleUpgrade('Business')}>💎 Upgrade Business</button>
-        {:else if planKey === 'pro'}
-          <button class="btn-sm" on:click={() => handleUpgrade('Business')}>💎 Upgrade Business</button>
+        {#if myRole === 'owner'}
+          {#if planKey === 'starter' || planKey === 'free'}
+            <button class="btn-sm" on:click={() => handleUpgrade('Pro')}>🚀 Upgrade Pro</button>
+            <button class="btn-sm" on:click={() => handleUpgrade('Business')}>💎 Upgrade Business</button>
+          {:else if planKey === 'pro'}
+            <button class="btn-sm" on:click={() => handleUpgrade('Business')}>💎 Upgrade Business</button>
+          {/if}
         {/if}
       </span>
     </div>
