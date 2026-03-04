@@ -167,7 +167,7 @@
 
   async function activateBusiness() {
     if (!myClinicId) return;
-    saving = true;
+    isSaving = true;
     try {
       const { error } = await supabase.from('subscriptions').upsert({
         clinic_id: myClinicId,
@@ -177,7 +177,6 @@
       }, { onConflict: 'clinic_id' });
       
       if (error) {
-        // Fallback: se a tabela de fato não aceitar, a gente avisa
         alert("Erro SQL: " + error.message);
       } else {
         alert("💎 Plano Business Vitalício Ativado com Sucesso! Recarregue a página.");
@@ -185,7 +184,7 @@
     } catch(e) {
       alert("Erro fatal: " + e.message);
     }
-    saving = false;
+    isSaving = false;
   }
 
   onMount(async () => {
@@ -310,8 +309,8 @@
 
     <!-- DEV MODE BUTTON -->
     <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px dashed #333; text-align: center;">
-      <button class="btn-dev" on:click={activateBusiness} disabled={saving}>
-        {saving ? 'Ativando...' : '💎 Ativar Plano Business Vitalício (Dev Mode)'}
+      <button class="btn-dev" on:click={activateBusiness} disabled={isSaving}>
+        {isSaving ? 'Ativando...' : '💎 Ativar Plano Business Vitalício (Dev Mode)'}
       </button>
       <p style="color: #666; font-size: 0.75rem; margin-top: 0.5rem;">Clica aqui para burlar o paywall e testar todas as features.</p>
     </div>
