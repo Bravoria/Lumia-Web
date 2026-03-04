@@ -45,7 +45,8 @@ export async function getClinicPlan(clinicId) {
             max_faq: -1,
             ceo_virtual: true,
             online_booking: true,
-            whatsapp_ai: true
+            whatsapp_ai: true,
+            content_ai: true
         }
     };
 

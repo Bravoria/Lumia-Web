@@ -4,7 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { env } from '$env/dynamic/private';
 
 function getSupabase() {
-    return createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY);
+    // Usar service role key para bypass do RLS (API server-side)
+    return createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.VITE_SUPABASE_ANON_KEY);
 }
 
 const TRAINER_PROMPT = `Você é o AGENTE TREINADOR da plataforma LumiaOS.
