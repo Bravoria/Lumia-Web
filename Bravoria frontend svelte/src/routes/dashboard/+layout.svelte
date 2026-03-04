@@ -105,7 +105,7 @@
         <p class="nav-label">Operações</p>
         <a href="/dashboard/agenda" class:active={path === '/dashboard/agenda'}>📅 Agenda</a>
         {#if myRole !== 'receptionist'}
-          <a href="/dashboard/faq" class:active={path.startsWith('/dashboard/faq')}>🎓 Treinamento IA</a>
+          <a href="/dashboard/treinamento" class:active={path.startsWith('/dashboard/treinamento')}>🎓 Treinamento IA</a>
           <a href="/dashboard/whatsapp" class:active={path === '/dashboard/whatsapp'}>📱 WhatsApp IA</a>
         {/if}
       </div>
@@ -194,7 +194,7 @@
   :global(::-webkit-scrollbar-thumb) { background: #2a2a2a; border-radius: 3px; }
   :global(::-webkit-scrollbar-thumb:hover) { background: #444; }
   :global(*) { scrollbar-width: thin; scrollbar-color: #2a2a2a transparent; }
-  .os-container { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+  .os-container { display: flex; height: 100vh; width: 100vw; overflow: hidden; position: relative; z-index: 1; pointer-events: auto; }
 
   /* Sidebar */
   .sidebar-os { width: 240px; border-right: 1px solid #1A1A1E; background: #0F0F11; padding: 1.5rem 1rem; flex-shrink: 0; display: flex; flex-direction: column; overflow-y: auto; }
@@ -212,8 +212,8 @@
   .logout-btn:hover { color: #EF4444; background: rgba(239,68,68,0.05); }
 
   /* Status Bar */
-  .main-viewport { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .system-status-bar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid #1A1A1E; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; }
+  .main-viewport { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; z-index: 2; pointer-events: auto; }
+  .system-status-bar { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid #1A1A1E; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; z-index: 10; position: relative; }
   .status-green { background: rgba(34, 197, 94, 0.03); color: #22C55E; }
   .status-info { display: flex; align-items: center; gap: 10px; }
   .pulse { width: 6px; height: 6px; background: #22C55E; border-radius: 50%; box-shadow: 0 0 10px #22C55E; animation: pulseGlow 2s ease-in-out infinite; }
@@ -222,9 +222,9 @@
 
   .btn-os-action { background: #fff; color: #000; border: none; padding: 4px 12px; border-radius: 6px; font-weight: 700; font-size: 0.65rem; cursor: pointer; text-decoration: none; font-family: 'Inter', sans-serif; letter-spacing: 0.02em; transition: all 0.2s ease; }
   .btn-os-action:hover { background: #e0e0e0; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(255,255,255,0.1); }
-  .os-content { flex: 1; overflow-y: auto; padding: 2rem; }
+  .os-content { flex: 1; overflow-y: auto; padding: 2rem; position: relative; z-index: 5; pointer-events: auto; }
 
-  .page-transition { animation: pageIn 0.35s ease both; }
+  .page-transition { animation: pageIn 0.35s ease both; min-height: 100%; width: 100%; pointer-events: auto; }
   @keyframes pageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
   /* Mobile */

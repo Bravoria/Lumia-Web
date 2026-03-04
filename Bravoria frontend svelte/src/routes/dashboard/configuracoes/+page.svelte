@@ -11,6 +11,7 @@
 
   // Campos (lado esquerdo)
   let clinicName = '';
+  let agentName = 'Lumia';
   let specialty = '';
   let city = '';
   let whatsapp = '';
@@ -79,6 +80,7 @@
 
     if (data) {
       clinicName = data.clinic_name || '';
+      agentName = data.agent_name || 'Lumia';
       specialty = data.specialty || '';
       city = data.city || '';
       whatsapp = data.whatsapp || '';
@@ -136,6 +138,7 @@
     const payload = {
       user_id: session.user.id,
       clinic_name: clinicName || null,
+      agent_name: agentName.trim() || 'Lumia',
       specialty: specialty.trim(),
       city: city.trim(),
       whatsapp: whatsapp || null,
@@ -227,6 +230,12 @@
         <div class="field">
           <label>Nome da clínica (opcional)</label>
           <input placeholder="Ex: Clínica NovaVida" bind:value={clinicName} />
+        </div>
+
+        <div class="field">
+          <label>Nome da assistente virtual</label>
+          <input placeholder="Ex: Lumia, Bia, Carol..." bind:value={agentName} />
+          <p class="hint">Esse é o nome que a IA vai usar ao se apresentar no WhatsApp.</p>
         </div>
 
         <div class="field">
@@ -365,6 +374,7 @@
   }
   textarea{ resize: vertical; font-family: 'Inter', sans-serif; }
   input:focus, select:focus, textarea:focus{ border-color:#E5C100; }
+  .hint { color: #555; font-size: 0.72rem; margin: 0.35rem 0 0; }
 
   .days{ display:flex; flex-wrap:wrap; gap:.75rem; margin-bottom:1rem; }
   .day{ display:flex; align-items:center; gap:.4rem; color:#ccc; font-size:.9rem; cursor: pointer; }

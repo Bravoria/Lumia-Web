@@ -20,7 +20,7 @@ async function generateAIResponse(messages, systemPrompt) {
     try {
         const response = await openai.chat.completions.create({
             model: 'gpt-4o', // Model mais inteligente para os Agentes PhD
-            temperature: 0.3, // Menos alucinação
+            temperature: 0.25, // Máxima humanização, menor chance de jargões robóticos repetitivos
             messages: [
                 { role: 'system', content: systemPrompt },
                 ...messages
@@ -30,7 +30,7 @@ async function generateAIResponse(messages, systemPrompt) {
         return response.choices[0].message.content;
     } catch (error) {
         console.error('❌ Erro na OpenAI:', error.message);
-        return 'Desculpe, estou enfrentando uma instabilidade técnica no momento. Pode aguardar alguns minutos e me chamar novamente?';
+        return 'Oi! Desculpa a demora, a nossa internet deu uma oscilada feia aqui na clínica agorinha 😅 Pode me repetir o que você tinha falado?';
     }
 }
 

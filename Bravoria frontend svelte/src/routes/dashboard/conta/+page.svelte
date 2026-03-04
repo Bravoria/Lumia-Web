@@ -12,6 +12,7 @@
   let showUpgrade = false;
   let upgradeTarget = 'Pro';
   let newPassword = '';
+  let myRole = '';
   
   // Estados para salvar o nome
   let savingName = false;
@@ -24,21 +25,27 @@
   let isErrorPass = false;
 
   onMount(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    email = user?.email ?? '';
-    fullName = user?.user_metadata?.full_name ?? '';
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      email = user.email ?? '';
+      fullName = user.user_metadata?.full_name ?? '';
 
-    // Fetch real plan
-    const { data: member } = await supabase.from('clinic_members')
-      .select('clinic_id, role').eq('user_id', user.id).limit(1).maybeSingle();
-    if (member?.clinic_id) {
-      clinicId = member.clinic_id;
-      myRole = member.role;
-      const info = await getClinicPlan(clinicId);
-      planName = info?.planName || 'Starter (Gratuito)';
-      planKey = info?.planId || 'starter';
-    } else {
-      planName = 'Sem clínica';
+      // Fetch real plan
+      const { data: member } = await supabase.from('clinic_members')
+        .select('clinic_id, role').eq('user_id', user.id).limit(1).maybeSingle();
+      if (member?.clinic_id) {
+        clinicId = member.clinic_id;
+        myRole = member.role || '';
+        const info = await getClinicPlan(clinicId);
+        planName = info?.planName || 'Starter (Gratuito)';
+        planKey = info?.planId || 'starter';
+      } else {
+        planName = 'Sem clínica';
+      }
+    } catch (e) {
+      console.error('Erro ao carregar conta:', e);
+      planName = 'Erro ao carregar';
     }
   });
 

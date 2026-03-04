@@ -50,14 +50,7 @@ export async function getClinicPlan(clinicId) {
     };
 
     try {
-        // 1. CHECAR OVERRIDE DO CLINIC_SETTINGS PRIMEIRO (Botão DEV)
-        const { data: cData } = await supabase
-            .from('clinic_settings')
-            .select('plan_type')
-            .eq('id', clinicId)  // Opa, a tabela clinic_settings usa user_id. Vou pegar via clinics então ou apenas ignorar o erro do banco, pera.
-            .maybeSingle(); // O painel passava 'clinicId'. A tabela era user_id. Mas no botão nós passamos user_id.
-
-        // Em vez disso, vamos puxar todos os settings ligados ao clinic_id:
+        // 1. Buscar o owner da clínica para checar override de plano
         const { data: memberData } = await supabase
             .from('clinic_members')
             .select('user_id')
@@ -78,7 +71,7 @@ export async function getClinicPlan(clinicId) {
             }
         }
 
-        // 2. SE NÃO TIVER OVERRIDE, BUSCA NO SUPABASE PADRÃO
+        // 2. SE NÃO TIVER OVERRIDE, BUSCA SUBSCRIPTION
         const { data: sub } = await supabase
             .from('subscriptions')
             .select('plan_id, status')
@@ -107,6 +100,7 @@ export async function getClinicPlan(clinicId) {
         return result;
     } catch (e) {
         console.error('Erro ao buscar plano:', e);
+        _cache = { clinicId, plan: defaults, ts: now };
         return defaults;
     }
 }
