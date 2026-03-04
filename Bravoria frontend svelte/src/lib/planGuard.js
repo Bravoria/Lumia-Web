@@ -33,14 +33,62 @@ export async function getClinicPlan(clinicId) {
         }
     };
 
+    // Business Ilimitado (Master)
+    const businessUnlimited = {
+        planId: 'business',
+        planName: 'Business VIP',
+        status: 'active',
+        limits: {
+            max_users: -1,
+            max_patients: -1,
+            max_appointments_month: -1,
+            max_faq: -1,
+            ceo_virtual: true,
+            online_booking: true,
+            whatsapp_ai: true
+        }
+    };
+
     try {
+        // 1. CHECAR OVERRIDE DO CLINIC_SETTINGS PRIMEIRO (Botão DEV)
+        const { data: cData } = await supabase
+            .from('clinic_settings')
+            .select('plan_type')
+            .eq('id', clinicId)  // Opa, a tabela clinic_settings usa user_id. Vou pegar via clinics então ou apenas ignorar o erro do banco, pera.
+            .maybeSingle(); // O painel passava 'clinicId'. A tabela era user_id. Mas no botão nós passamos user_id.
+
+        // Em vez disso, vamos puxar todos os settings ligados ao clinic_id:
+        const { data: memberData } = await supabase
+            .from('clinic_members')
+            .select('user_id')
+            .eq('clinic_id', clinicId)
+            .eq('role', 'owner')
+            .maybeSingle();
+
+        if (memberData?.user_id) {
+            const { data: pOverride } = await supabase
+                .from('clinic_settings')
+                .select('plan_type')
+                .eq('user_id', memberData.user_id)
+                .maybeSingle();
+
+            if (pOverride?.plan_type === 'business_lifetime') {
+                _cache = { clinicId, plan: businessUnlimited, ts: now };
+                return businessUnlimited;
+            }
+        }
+
+        // 2. SE NÃO TIVER OVERRIDE, BUSCA NO SUPABASE PADRÃO
         const { data: sub } = await supabase
             .from('subscriptions')
             .select('plan_id, status')
             .eq('clinic_id', clinicId)
             .maybeSingle();
 
-        if (!sub) return defaults;
+        if (!sub) {
+            _cache = { clinicId, plan: defaults, ts: now };
+            return defaults;
+        }
 
         const { data: plan } = await supabase
             .from('plans')

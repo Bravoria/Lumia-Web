@@ -169,12 +169,13 @@
     if (!myClinicId) return;
     isSaving = true;
     try {
-      const { error } = await supabase.from('subscriptions').upsert({
-        clinic_id: myClinicId,
-        plan: 'business',
-        status: 'active',
-        current_period_end: '2099-12-31T23:59:59Z'
-      }, { onConflict: 'clinic_id' });
+      const session = await requireSession();
+      if (!session) return;
+      
+      const { error } = await supabase.from('clinic_settings').upsert({
+        user_id: session.user.id,
+        plan_type: 'business_lifetime'
+      }, { onConflict: 'user_id' });
       
       if (error) {
         alert("Erro SQL: " + error.message);
