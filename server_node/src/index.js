@@ -28,6 +28,62 @@ app.post('/api/whatsapp/disconnect', async (req, res) => {
     res.json({ success: true, message: 'Desconectado com sucesso' });
 });
 
+app.get('/api/whatsapp/conversations', async (req, res) => {
+    try {
+        // Busca pacientes agrupados pelas últimas interações. Simplificado buscando os últimos que têm log.
+        // Simulando listagem dos 'chats recentes'. Em caso de produção avançada faz-se um raw query via Postgres RPC.
+        const { data: patients, error } = await supabase
+            .from('patients')
+            .select(`
+                id, name, phone, status,
+                chat_logs ( id, user_message, ai_message, created_at )
+            `)
+            .order('created_at', { ascending: false, foreignTable: 'chat_logs' })
+            .limit(10, { foreignTable: 'chat_logs' })
+            .order('created_at', { ascending: false })
+            .limit(30);
+
+        if (error) throw error;
+
+        // Pós processar
+        const sorted = patients.filter(p => p.chat_logs && p.chat_logs.length > 0)
+            .map(p => {
+                // pegar o último log
+                const lastLog = p.chat_logs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+                return {
+                    id: p.id,
+                    name: p.name,
+                    phone: p.phone,
+                    status: p.status,
+                    lastMessage: lastLog ? (lastLog.user_message || lastLog.ai_message) : '',
+                    lastMessageTime: lastLog ? lastLog.created_at : null
+                }
+            }).sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+
+        res.json({ success: true, data: sorted });
+    } catch (e) {
+        console.error(e);
+        res.json({ success: false, error: e.message });
+    }
+});
+
+app.get('/api/whatsapp/messages/:patientId', async (req, res) => {
+    try {
+        const { patientId } = req.params;
+        const { data, error } = await supabase
+            .from('chat_logs')
+            .select('*')
+            .eq('patient_id', patientId)
+            .order('created_at', { ascending: true })
+            .limit(100);
+
+        if (error) throw error;
+        res.json({ success: true, data });
+    } catch (e) {
+        res.json({ success: false, error: e.message });
+    }
+});
+
 // ==========================================
 // PIPELINE COGNITIVO (O CEREBRO DO AGENTE)
 // ==========================================
@@ -87,50 +143,36 @@ async function handleIncomingMessage(msgObj) {
 
         const agentName = settings?.agent_name || 'Lumia';
 
-        let systemPrompt = `🧠 ${agentName.toUpperCase()} — Prompt Mestre v3.0
-Refinamento cirúrgico baseado em erros reais de atendimento
+        let systemPrompt = `🧠 ${agentName.toUpperCase()} — Prompt Mestre v4.0 (JSON OBRIGATÓRIO)
+Refinamento cirúrgico para atendimento humanizado, prestativo e NUNCA focado apenas em forçar agenda.
 
-🎭 IDENTIDADE
-Você se chama ${agentName}. Assistente de atendimento da ${settings?.name || 'Clínica'}.
-Você é humana, direta, calorosa. Resolve. Não enrola.
-Se perguntarem seu nome: "Me chamo ${agentName}, assistente da clínica! 😊"
+🎭 IDENTIDADE E TOM DE VOZ
+Você se chama ${agentName}, assistente de atendimento da ${settings?.name || 'Clínica'}.
+Seu objetivo principal é AJUDAR, TIRAR DÚVIDAS E PASSAR SEGURANÇA. O agendamento deve ser uma consequência natural de um cliente bem atendido e com as dúvidas sanadas, NUNCA o foco desesperado da primeira interação.
+Tom de voz: Direta, Calorosa (sem exagerar em emojis), Confiante e Paciente.
 
-🚨 REGRA #1 — NUNCA INICIE COM "OI [NOME]"
-Este é o erro mais destrutivo do atendimento. Começar cada resposta com "Oi Jorge!" ou "Olá, Jorge! Tudo bem?" faz o agente parecer um robô lendo um script.
-Vá direto ao ponto. Responda o que foi perguntado. A saudação é opcional e deve aparecer no máximo UMA VEZ — na primeira mensagem da conversa.
-✅ Certo: "Sexta tem sim! Tenho às 10h e às 15h — qual funciona?"
-❌ Errado: "Oi Jorge! Tudo bem? Deixa eu ver aqui pra você! 😊 Sexta tem sim..."
+🚨 REGRA #1 — NUNCA INICIE COM "OI [NOME]" E SEJA PRESTATIVA
+Vá direto ao ponto. Responda o que foi perguntado.
+A saudação é opcional e deve aparecer no máximo UMA VEZ na primeira mensagem da conversa.
+Não force a venda. Se a pessoa quer saber preço, explique. Se quer saber se dói, acalme-a. Somente depois ofereça agendamento se julgar apropriado.
 
 🚨 REGRA #2 — NOME DO CONTATO ≠ NOME DA PESSOA
-O WhatsApp pode mostrar o nome como apelido/empresa. NUNCA use o nome completo. Use apenas o primeiro nome: "${patient.name ? patient.name.split(' ')[0] : 'Você'}".
-❌ Nunca diga coisas como: "Oi Jorge Matheus - Metrocasa!"
+NUNCA use o nome completo. Use apenas o primeiro nome: "${patient.name ? patient.name.split(' ')[0] : 'Você'}".
 
-🚨 REGRA #3 — MEMÓRIA DE CONTEXTO
-Se a pessoa já disse o que quer nesta conversa, você já sabe. Não reinicie. Não pergunte de novo.
-Pessoa disse que quer horário às 10h → sumiu → voltou com "Oii"
-✅ Resposta certa: "Tô aqui! Ainda quer confirmar amanhã às 10h?"
+🚨 REGRA #3 — MEMÓRIA DE CONTEXTO E FLUXO
+Se a pessoa já disse o que quer, você já sabe. Não reinicie.
+[1] Acolher e Entender a Dúvida → [2] Responder com Clareza (baseado no FAQ) → [3] Quando todas as dúvidas acabarem, oferecer Opções Reais de Agenda.
 
-🚨 REGRA #4 — NUNCA INVENTE DISPONIBILIDADE
-Se não tiver certeza se o horário está livre, não confirme nem negue:
-"Deixa eu checar certinho aqui pra você. Um segundo!"
+🚨 REGRA INSTITUCIONAL — NUNCA INVENTE
+Se não souber, diga: "Vou verificar essa informação específica com a nossa equipe pra você."
+${agentName} não faz diagnóstico, não prescreve e não opina sobre tratamentos. "A Dra. consegue te dar certeza absoluta sobre isso na avaliação!"
 
-🔄 FLUXO DE AGENDAMENTO — 5 ETAPAS
-Toda conversa de agendamento deve percorrer este caminho. Não pare no meio.
-[1] ENTENDER → [2] OFERECER OPÇÕES REAIS → [3] CONFIRMAR ESCOLHA → [4] COLETAR DADOS → [5] ENCERRAR
-Etapa 2: Nunca diga "temos horários disponíveis". Especifique sempre ("Tenho quinta às 14h ou sexta às 10h. Qual funciona melhor?").
-
-🗣️ TOM DE VOZ
-Direta: vai logo ao ponto. Calorosa: mas sem exagerar em emojis. Confiante: nunca hesitante. Natural.
-Emojis: 1 por mensagem no máximo. Exclamações: 1 por mensagem no máximo.
-
-📋 RESPOSTAS MODELO
-- Oii no meio da conversa: "Tô aqui! [Retome o contexto da última interação]."
-- Horário solicitado não disponível: "Esse horário já está ocupado 😕 Mas tenho [opção A] ou [opção B]. Alguma funciona?"
-- Dia sem atendimento: "Aos domingos não atendemos. Mas posso te encaixar na segunda às [hora] ou na sexta às [hora] — qual prefere?"
-
-🚫 LIMITES
-${agentName} não faz diagnóstico, não prescreve, não interpreta exames, não toma decisão médica.
-Para isso: "Essa pergunta a doutora vai responder certinho pra você na consulta!"
+🔥 REGRA ABSOLUTA DE SAÍDA — JSON OBRIGATÓRIO 🔥
+Você DEVE SEMPRE, SEM EXCEÇÃO, retornar sua resposta em formato JSON VÁLIDO contendo exatamente estas duas chaves:
+{
+  "resposta_chat": "Cadeia de texto limpa com a sua mensagem conversacional para ser enviada no WhatsApp",
+  "resumo_crm": "Resumo analítico de até 6 palavras sobre a intenção atual DO PACIENTE"
+}
 
 ⚙️ DADOS DA CLÍNICA
 Nome da clínica: ${settings?.name || 'Clínica Lumia'}
@@ -141,12 +183,12 @@ Regras Gerais: ${settings?.ai_rules || 'Agendar prontamente e com simpatia.'}
 Nome: ${patient.name ? patient.name.split(' ')[0] : ''}
 
 📚 BASE DE DADOS E FAQ (USE AS REGRAS DA CLÍNICA PARA RESPONDER AS DÚVIDAS)\n`;
-        if (faqs) faqs.forEach(f => { systemPrompt += `Pergunta Comum: ${f.question}\nSua Resposta Base: ${f.answer}\n\n`; });
+        if (faqs) faqs.forEach(f => { systemPrompt += `Pergunta Comum: ${f.question} \nSua Resposta Base: ${f.answer} \n\n`; });
 
         // Injetar regras do Agente Treinador
         if (trainingRules && trainingRules.length > 0) {
-            systemPrompt += `\n🎓 TREINAMENTO PERSONALIZADO (Regras aprendidas com o dono da clínica)\n`;
-            trainingRules.forEach(r => { systemPrompt += `- [${r.category?.toUpperCase()}]: ${r.rule_text}\n`; });
+            systemPrompt += `\n🎓 TREINAMENTO PERSONALIZADO(Regras aprendidas com o dono da clínica) \n`;
+            trainingRules.forEach(r => { systemPrompt += `- [${r.category?.toUpperCase()}]: ${r.rule_text} \n`; });
         }
 
         // 3. Montar Histórico (Últimas 4 interações)
@@ -166,21 +208,39 @@ Nome: ${patient.name ? patient.name.split(' ')[0] : ''}
         // Lembrete Constante de Não Alucinar (Impede Amensia pós-histórico longo)
         history.push({
             role: 'system',
-            content: 'REGRA ABSOLUTA DE ÚLTIMO SEGUNDO: NÃO DIGA OI NOVAMENTE NESTA CONVERSA. Apenas siga o fluxo de [OFERECER OPÇÕES -> CONFIRMAR -> COLETAR -> ENCERRAR].'
+            content: 'REGRA ABSOLUTA DE ÚLTIMO SEGUNDO: RETORNE APENAS UM JSON VÁLIDO. CHAVES: "resposta_chat" E "resumo_crm". NÃO DIGA OI NOVAMENTE. SEJA PRESTATiva.'
         });
 
         history.push({ role: 'user', content: text });
 
-        // 4. OpenAI Processando
-        console.log(`   └─ 🧠 OpenAI Processando RAG...`);
-        const aiResponse = await generateAIResponse(history, systemPrompt);
+        // 4. OpenAI Processando (Retorna um JSON via Schema Mode)
+        console.log(`   └─ 🧠 OpenAI Processando RAG(Modo JSON)...`);
+        const aiRawResponse = await generateAIResponse(history, systemPrompt);
+
+        let respostaChat = '';
+        let resumoCrm = '';
+
+        try {
+            const parsed = JSON.parse(aiRawResponse);
+            respostaChat = parsed.resposta_chat || 'Desculpe, a conexão da clínica oscilou, pode repetir?';
+            resumoCrm = parsed.resumo_crm || '';
+        } catch (e) {
+            console.error('❌ Falha ao dar Parse no JSON da OpenAI:', e);
+            respostaChat = aiRawResponse; // Tenta devolver do jeito que veio em último caso
+        }
+
+        // 4.5 Salvar Resumo Analítico no CRM, caso o Lead não seja fallback
+        if (resumoCrm && patient.id !== 'fallback-id') {
+            await supabase.from('patients').update({ notes: resumoCrm }).eq('id', patient.id);
+            console.log(`   └─ 📝 Nota de CRM da IA: [${resumoCrm}]`);
+        }
 
         // 5. Salvar Log
-        await supabase.from('chat_logs').insert({ patient_id: patient.id, user_message: text, ai_message: aiResponse });
+        await supabase.from('chat_logs').insert({ patient_id: patient.id, user_message: text, ai_message: respostaChat });
 
         // 6. Devolver via Baileys
         console.log(`   └─ 📤 Disparando resposta final...`);
-        await sendWhatsAppMessage(phoneId, aiResponse);
+        await sendWhatsAppMessage(phoneId, respostaChat);
         console.log(`✅ Ciclo Completo com Sucesso!\n`);
 
     } catch (err) {
@@ -193,7 +253,7 @@ Nome: ${patient.name ? patient.name.split(' ')[0] : ''}
 // ==========================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
-    console.log(`🚀 [LumiaOS AI Engine - BAILEYS EDITION] Servidor Web na porta ${PORT}`);
+    console.log(`🚀[LumiaOS AI Engine - BAILEYS EDITION] Servidor Web na porta ${PORT} `);
 
     // Dar partida no WhatsApp Local e plugar a função Recebedora
     await initWhatsAppEngine(handleIncomingMessage);

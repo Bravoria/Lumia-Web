@@ -21,6 +21,7 @@ async function generateAIResponse(messages, systemPrompt) {
         const response = await openai.chat.completions.create({
             model: 'gpt-4o', // Model mais inteligente para os Agentes PhD
             temperature: 0.25, // Máxima humanização, menor chance de jargões robóticos repetitivos
+            response_format: { type: "json_object" },
             messages: [
                 { role: 'system', content: systemPrompt },
                 ...messages
