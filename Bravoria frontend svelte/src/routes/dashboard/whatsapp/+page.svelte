@@ -4,6 +4,7 @@
   import { fade, fly } from 'svelte/transition';
   import { getClinicPlan, canAccess } from '$lib/planGuard.js';
   import UpgradeModal from '$lib/components/UpgradeModal.svelte';
+  import { page } from '$app/stores';
 
   let connectionState = 'disconnected';
   let loading = true;
@@ -21,11 +22,21 @@
   let agendamentosHoje = 0;
   let aiEnabled = true;
   let pollingInterval;
+  
+  // Abas da tela unificada
+  // Pode ser 'conversas' ou 'pipeline'
+  let currentTab = 'conversas';
 
-  // URL do backend Node.js (via proxy do Vite em dev, ou direto em produção)
+  // URL do backend Node.js
   const ENGINE_URL = '';
 
   onMount(async () => {
+    // Pegar a aba inicial da querystring caso exista (ex: redirecionamento do pipeline antigo)
+    const urlTab = $page.url.searchParams.get('tab');
+    if (urlTab === 'pipeline' || urlTab === 'conversas') {
+      currentTab = urlTab;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -100,15 +111,34 @@
   }
 </script>
 
-<svelte:head><title>WhatsApp & IA • Lumia</title></svelte:head>
+<svelte:head><title>WhatsApp & CRM • Lumia</title></svelte:head>
 
-<div class="wrap">
-  <div class="head">
+<div class={connectionState === 'online' ? "wrap online-wrap" : "wrap"}>
+  <div class="head flex-head">
     <div>
-      <p class="label">INTEGRAÇÃO</p>
-      <h1>WhatsApp + IA</h1>
-      <p class="sub">Automatize seus agendamentos e o atendimento a pacientes usando IA diretamente no seu número.</p>
+      <p class="label">WORKSPACE</p>
+      <h1>WhatsApp + CRM</h1>
+      <p class="sub">Seu hub de comunicação gerido por Inteligência Artificial.</p>
     </div>
+    
+    {#if connectionState === 'online' && hasAccess}
+      <div class="tabs-container">
+        <button 
+          class="tab-btn" 
+          class:active={currentTab === 'conversas'} 
+          on:click={() => currentTab = 'conversas'}
+        >
+           💬 Conversas
+        </button>
+        <button 
+          class="tab-btn" 
+          class:active={currentTab === 'pipeline'} 
+          on:click={() => currentTab = 'pipeline'}
+        >
+           🎯 Pipeline
+        </button>
+      </div>
+    {/if}
   </div>
 
   {#if !loading && !hasAccess}
@@ -175,47 +205,163 @@
         </div>
 
       {:else if connectionState === 'online'}
-        <div class="connected-state" in:fade>
-          <div class="connected-hero">
-            <div class="pulse-ring">
-              <div class="brain-icon outline">🧠</div>
+        <!-- CONTEÚDO QUANDO ONLINE BASEADO NA ABA ESCOLHIDA -->
+        {#if currentTab === 'conversas'}
+          <div class="chat-split-view" in:fade>
+            <!-- Lado Esquerdo: Lista de Chats -->
+            <div class="chat-sidebar">
+              <div class="sidebar-header">
+                <h3>Mensagens</h3>
+                <span class="badge">{msgsHoje} Hoje</span>
+              </div>
+              <div class="chat-list">
+                <!-- MOCKUP DE CHAT PARA PREVIEW -->
+                <div class="chat-item active">
+                  <div class="avatar bg-blue">MD</div>
+                  <div class="chat-info">
+                    <div class="chat-top">
+                      <span class="name">Maria Dantas</span>
+                      <span class="time">10:42</span>
+                    </div>
+                    <span class="last-msg">Gostaria de agendar uma consulta...</span>
+                  </div>
+                </div>
+                <div class="chat-item">
+                  <div class="avatar bg-purple">CF</div>
+                  <div class="chat-info">
+                    <div class="chat-top">
+                      <span class="name">Carlos Fernandes</span>
+                      <span class="time">Ontem</span>
+                    </div>
+                    <span class="last-msg">Obrigado pelo retorno!</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h3>O Agente assumiu o controle!</h3>
-            <p>Seus pacientes estão sendo respondidos pela inteligência da Lumia.</p>
-          </div>
 
-          <div class="controls-row">
-            <label class="toggle-switch">
-              <input type="checkbox" bind:checked={aiEnabled}>
-              <span class="slider"></span>
-            </label>
-            <div class="control-text">
-              <strong>{aiEnabled ? 'Respostas Autônomas ATIVADAS' : 'Respostas Autônomas PAUSADAS'}</strong>
-              <span>{aiEnabled ? 'A IA responde instantaneamente' : 'A IA apenas sugere respostas aos humanos'}</span>
+            <!-- Lado Direito: Área da Conversa -->
+            <div class="chat-main">
+              <div class="chat-main-header">
+                <div class="flex-row items-center gap-3">
+                  <div class="avatar bg-blue">MD</div>
+                  <div>
+                    <h3 style="margin:0; font-size:1rem;">Maria Dantas</h3>
+                    <span style="color:#22c55e; font-size:0.8rem;">● Online</span>
+                  </div>
+                </div>
+                <div class="controls-row small-toggle">
+                  <label class="toggle-switch">
+                    <input type="checkbox" bind:checked={aiEnabled}>
+                    <span class="slider"></span>
+                  </label>
+                  <span class="feature-label">IA {aiEnabled ? 'Ativada' : 'Pausada'}</span>
+                </div>
+              </div>
+              <div class="chat-history">
+                 <div class="bubble patient">
+                    Olá, gostaria de agendar uma avaliação odontológica para meu filho. Vocês atendem Unimed?
+                 </div>
+                 <div class="bubble ai flex items-center gap-2">
+                    <span style="font-size:0.7rem; color:#E5C100;">🤖 Respondido por Lumia</span>
+                    Perfeitamente, Maria! Atendemos Unimed sim. Temos horários disponíveis para Odontopediatria nesta quinta às 14h ou sexta às 09h. Qual prefere?
+                 </div>
+              </div>
+              <div class="chat-input-area">
+                <input type="text" placeholder="Digite uma mensagem manual..." />
+                <button class="send-btn">Enviar</button>
+              </div>
             </div>
           </div>
+        {:else if currentTab === 'pipeline'}
+          <div class="kanban-board" in:fade>
+             <div class="kanban-header">
+                <h2>Pipeline de Vendas / CRM</h2>
+                <div class="stats-row mini-stats">
+                  <div class="stat-box">
+                    <span class="st-label">Novos Leads</span>
+                    <strong class="st-val">{leadsHoje}</strong>
+                  </div>
+                  <div class="stat-box highlight">
+                    <span class="st-label">Agendados pela IA</span>
+                    <strong class="st-val">{agendamentosHoje}</strong>
+                  </div>
+                </div>
+             </div>
+             
+             <!-- MOCK Kanban Colunas -->
+             <div class="kanban-columns">
+               <div class="k-col">
+                 <div class="k-col-head">
+                   <span>Lead (Novos)</span>
+                   <span class="count">2</span>
+                 </div>
+                 <div class="k-cards">
+                   <div class="k-card">
+                     <span class="k-tag new">Novo</span>
+                     <h4>João Pedro</h4>
+                     <p>Interesse em Clareamento</p>
+                     <div class="k-foot">Hoje 09:15</div>
+                   </div>
+                   <div class="k-card">
+                     <span class="k-tag new">Novo</span>
+                     <h4>Ana Lúcia</h4>
+                     <p>Implante Dentário</p>
+                     <div class="k-foot">Ontem</div>
+                   </div>
+                 </div>
+               </div>
 
-          <div class="stats-row">
-            <div class="stat-box">
-              <span class="st-label">Mensagens Hoje</span>
-              <strong class="st-val">{msgsHoje}</strong>
-            </div>
-            <div class="stat-box">
-              <span class="st-label">Novos Leads</span>
-              <strong class="st-val">{leadsHoje}</strong>
-            </div>
-            <div class="stat-box highlight">
-              <span class="st-label">Agendados pela IA</span>
-              <strong class="st-val">{agendamentosHoje}</strong>
-            </div>
+               <div class="k-col">
+                 <div class="k-col-head">
+                   <span>Em Contato</span>
+                   <span class="count">1</span>
+                 </div>
+                 <div class="k-cards">
+                   <div class="k-card">
+                     <span class="k-tag wait">Aguardando</span>
+                     <h4>Carlos Fernandes</h4>
+                     <p>Avaliando orçamento</p>
+                     <div class="k-foot">Ontem</div>
+                   </div>
+                 </div>
+               </div>
+
+               <div class="k-col">
+                 <div class="k-col-head highlight-head">
+                   <span>Agendado</span>
+                   <span class="count">1</span>
+                 </div>
+                 <div class="k-cards">
+                   <div class="k-card succ">
+                     <span class="k-tag scheduled">24/Out 14:00</span>
+                     <h4>Maria Dantas</h4>
+                     <p>Avaliação Odontopediatria</p>
+                     <div class="k-foot">🤖 IA Agendou</div>
+                   </div>
+                 </div>
+               </div>
+
+               <div class="k-col">
+                 <div class="k-col-head">
+                   <span>Ativo / Finalizado</span>
+                   <span class="count">0</span>
+                 </div>
+                 <div class="k-cards empty-drop">
+                   Arraste cards para cá
+                 </div>
+               </div>
+             </div>
           </div>
+        {/if}
 
-          <button class="btn-danger outline mt-4" on:click={disconnect}>Desconectar Número</button>
+        <div style="text-align: right; width: 100%; margin-top: 1rem;">
+          <button class="btn-ghost" style="color:#ef4444;" on:click={disconnect}>Desconectar Número</button>
         </div>
       {/if}
     </div>
 
-    <!-- O que o agente faz -->
+    <!-- O que o agente faz: Aparece apenas se não estiver online -->
+    {#if connectionState !== 'online'}
     <div class="card bg-alt">
       <div class="card-header borderless">
         <h2>Capacidades do Agente</h2>
@@ -253,18 +399,112 @@
         </div>
       </div>
     </div>
+    {/if}
   </div>
   {/if}
 </div>
 
 <style>
-  .wrap { max-width: 1100px; margin: 0 auto; padding-bottom: 2rem; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-bottom: 2rem; transition: max-width 0.3s ease; }
+  .online-wrap { max-width: 1400px; /* Expandir a tela quando online para caber o kanban/chat */ }
+  
   .head { margin-bottom: 2rem; }
+  .flex-head { display: flex; justify-content: space-between; align-items: flex-end; }
+  
   .label { color: #555; letter-spacing: 3px; font-size: .72rem; text-transform: uppercase; margin: 0 0 .3rem; font-weight: 700; }
   h1 { color: #fff; font-size: 2rem; margin: 0 0 .35rem; letter-spacing: -.5px; }
   .sub { color: #777; margin: 0; font-size: .95rem; }
 
+  /* TABS NO HEADER */
+  .tabs-container { display: flex; gap: 0.5rem; background: #111; padding: 0.4rem; border-radius: 12px; border: 1px solid #252525; }
+  .tab-btn { background: transparent; border: none; color: #888; padding: 0.7rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .tab-btn:hover { color: #ccc; }
+  .tab-btn.active { background: #222; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+
+  /* ONLINE STATE ALTERAÇÕES */
+  .online-wrap .grid { grid-template-columns: 1fr; } /* Remove o sidebar direito do "O que a IA faz" */
+  .online-wrap .card { padding: 0; overflow: hidden; }
+  .online-wrap .card-header { padding: 1.5rem 1.5rem 0 1.5rem; justify-content: flex-end; border-bottom: none; margin-bottom: 0px; position: absolute; right: 0; z-index: 10; }
+
+  .flex-row { display: flex; }
+  .items-center { align-items: center; }
+  .gap-3 { gap: 0.75rem; }
+  .gap-2 { gap: 0.5rem; }
+
+  /* ------------------------------- */
+  /* CHAT SPLIT VIEW                 */
+  /* ------------------------------- */
+  .chat-split-view { display: flex; height: 600px; width: 100%; }
+  .chat-sidebar { width: 320px; border-right: 1px solid #252525; background: #0c0c0c; display: flex; flex-direction: column; }
+  .sidebar-header { padding: 1.5rem; border-bottom: 1px solid #252525; display: flex; justify-content: space-between; align-items: center; }
+  .sidebar-header h3 { color: #fff; margin: 0; font-size: 1.2rem; }
+  .badge { background: #1a1a1a; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; color: #aaa; }
+  
+  .chat-list { flex: 1; overflow-y: auto; }
+  .chat-item { display: flex; gap: 1rem; padding: 1rem; border-bottom: 1px solid #1a1a1a; cursor: pointer; transition: 0.2s; }
+  .chat-item:hover { background: #141414; }
+  .chat-item.active { background: #1a1a1a; border-left: 3px solid #E5C100; }
+  
+  .avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; }
+  .bg-blue { background: #3b82f6; }
+  .bg-purple { background: #8b5cf6; }
+  
+  .chat-info { flex: 1; overflow: hidden; }
+  .chat-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .name { color: #fff; font-weight: 600; font-size: 0.95rem; }
+  .time { color: #777; font-size: 0.75rem; }
+  .last-msg { color: #888; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+
+  .chat-main { flex: 1; display: flex; flex-direction: column; background: #111; }
+  .chat-main-header { padding: 1rem 1.5rem; border-bottom: 1px solid #252525; display: flex; justify-content: space-between; align-items: center; background: #141414; }
+  .chat-history { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+  
+  .bubble { max-width: 70%; padding: 1rem; border-radius: 12px; line-height: 1.5; font-size: 0.95rem; }
+  .bubble.patient { background: #1a1a1a; color: #eee; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .bubble.ai { background: rgba(229,193,0,0.1); color: #fff; border: 1px solid rgba(229,193,0,0.2); align-self: flex-end; border-bottom-right-radius: 4px; flex-direction: column; align-items: flex-end; }
+  
+  .chat-input-area { padding: 1rem 1.5rem; border-top: 1px solid #252525; display: flex; gap: 1rem; background: #0c0c0c; }
+  .chat-input-area input { flex: 1; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 0.8rem 1rem; color: #fff; outline: none; transition: 0.2s; }
+  .chat-input-area input:focus { border-color: #555; }
+  .send-btn { background: #fff; color: #000; font-weight: bold; border: none; border-radius: 8px; padding: 0 1.5rem; cursor: pointer; }
+
+
+  /* ------------------------------- */
+  /* KANBAN BOARD VIEW               */
+  /* ------------------------------- */
+  .kanban-board { padding: 1.5rem; background: #0c0c0c; min-height: 600px; display: flex; flex-direction: column; }
+  .kanban-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+  .kanban-header h2 { font-size: 1.4rem; font-weight: 600; color: #fff; }
+  .mini-stats { margin-bottom: 0; width: auto; gap: 1rem; }
+  .mini-stats .stat-box { padding: 0.5rem 1rem; border-radius: 8px; }
+  .mini-stats .st-val { font-size: 1.2rem; }
+
+  .kanban-columns { display: flex; gap: 1.5rem; overflow-x: auto; flex: 1; padding-bottom: 1rem; }
+  .k-col { width: 300px; min-width: 300px; background: #141414; border-radius: 12px; border: 1px solid #252525; display: flex; flex-direction: column; }
+  .k-col-head { padding: 1rem; border-bottom: 1px solid #252525; display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #aaa; }
+  .highlight-head { color: #E5C100; border-bottom-color: rgba(229,193,0,0.2); }
+  .k-col-head .count { background: #222; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; }
+
+  .k-cards { padding: 1rem; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+  .k-card { background: #1a1a1a; border: 1px solid #333; padding: 1rem; border-radius: 8px; cursor: grab; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+  .k-card:hover { transform: translateY(-2px); border-color: #555; }
+  .k-card.succ { border-color: rgba(74, 222, 128, 0.4); background: rgba(74, 222, 128, 0.05); }
+  
+  .k-card h4 { margin: 0 0 4px 0; color: #fff; font-size: 1rem; }
+  .k-card p { margin: 0 0 1rem 0; color: #888; font-size: 0.85rem; }
+  
+  .k-tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-bottom: 8px; display: inline-block; font-weight: bold; }
+  .k-tag.new { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+  .k-tag.wait { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+  .k-tag.scheduled { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+
+  .k-foot { font-size: 0.75rem; color: #666; border-top: 1px solid #333; padding-top: 8px; display: flex; align-items: center; gap: 4px; }
+  .empty-drop { display: flex; align-items: center; justify-content: center; color: #444; border: 2px dashed #222; border-radius: 8px; margin: 1rem; flex: none; height: 100px; }
+
+
+  /* Base Layout */
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
   
   /* Cards Base */
   .card {
